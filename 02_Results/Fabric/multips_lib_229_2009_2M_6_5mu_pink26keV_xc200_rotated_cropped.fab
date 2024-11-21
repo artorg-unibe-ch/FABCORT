@@ -1,0 +1,22 @@
+
+=====================================================================
+     Medical Image Analysis  by  D.H. Pahr 
+=====================================================================
+ Date - Time   = 2024/11/21 - 9:22
+ Param: -step  =      5
+ Param: -power =      2   (  128 Directions)
+ Param: -ftype =      1   (Ellip..1, 2nd Order..2)
+ Param: -valid =    0.0
+ Filename      = multips_lib_229_2009_2M_6_5mu_pink26keV_xc200_rotated_cropped.mhd
+ nx,ny,nz      = [408, 563, 746]
+ Threshold     = [131]
+ BV/TV         = 0.9092
+
+
+--------------------------------------------------------
+RESULTS: Morphological analysis normalized by : trace
+--------------------------------------------------------
+ MIL - Eigen values   :   1.50059    0.78898    0.71044
+ MIL - Eigen vector 1 :   0.12699    0.14933    0.98060
+ MIL - Eigen vector 2 :  -0.28593   -0.94113    0.18035
+ MIL - Eigen vector 3 :   0.94980   -0.30328   -0.07682
