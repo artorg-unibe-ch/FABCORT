@@ -26,71 +26,16 @@ np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
 #%% Functions
 
-def DyadicProduct(A,B):
+def GetFabric(FileName):
 
-    if A.size == 3:
-        C = np.zeros((3,3))
-        for i in range(3):
-            for j in range(3):
-                C[i,j] = A[i]*B[j]
-
-    elif A.size == 9:
-        C = np.zeros((3,3,3,3))
-        for i in range(3):
-            for j in range(3):
-                for k in range(3):
-                    for l in range(3):
-                            C[i,j,k,l] = A[i,j] * B[k,l]
-
-    else:
-        print('Matrices sizes mismatch')
-
-    return C
-
-def SymmetricProduct(A,B):
-
-    C = np.zeros((3, 3, 3, 3))
+    Text = open(FileName,'r').readlines()
+    BVTV = float(Text[12].split('=')[1])
+    eValues = np.array(Text[18].split(':')[1].split(),float)
+    eVectors = np.zeros((3,3))
     for i in range(3):
-        for j in range(3):
-            for k in range(3):
-                for l in range(3):
-                    C[i,j,k,l] = (1/2)*(A[i,k]*B[j,l]+A[i,l]*B[j,k])
+        eVectors[i] = Text[19+i].split(':')[1].split()
 
-    return C
-
-def ComplianceTensor(E1, E2, E3, Mu23, Mu31, Mu12, Nu12, Nu13, Nu23, EigenVectors=np.eye(3)):
-
-    # Define constants
-    Mu32, Mu13, Mu21 = Mu23, Mu31, Mu12
-    Nu21 = Nu12 * E2 / E1
-    Nu31 = Nu13 * E3 / E1
-    Nu32 = Nu23 * E3 / E2
-
-    # Group into list for loop computation
-    E = [E1, E2, E3]
-    Nu = np.array([[Nu13, Nu12], [Nu21, Nu23], [Nu32, Nu31]])
-    Mu = np.array([[Mu13, Mu12], [Mu21, Mu23], [Mu32, Mu31]])
-
-    # Build compliance tensor
-    ComplianceTensor = np.zeros((3, 3, 3, 3))
-    for i in range(3):
-        Mi = DyadicProduct(EigenVectors[i], EigenVectors[i])
-        Part1 = 1 / E[i] * DyadicProduct(Mi, Mi)
-        ComplianceTensor += Part1
-
-        for ii in range(3 - 1):
-            j = i - ii - 1
-            Mj = DyadicProduct(EigenVectors[j], EigenVectors[j])
-            Part2 = -Nu[i, ii] / E[i] * DyadicProduct(Mi, Mj)
-            Part3 = 1 / (2 * Mu[i, ii]) * SymmetricProduct(Mi, Mj)
-            ComplianceTensor += Part2 + Part3
-
-    ComplianceTensor = IsoMorphism3333_66(ComplianceTensor)
-
-    return ComplianceTensor
-
-
-
+    return eValues, eVectors, BVTV
 
 def Engineering2MandelNotation(A):
 
@@ -441,113 +386,6 @@ def Mandel2EngineeringNotation(A):
 
     return B
 
-
-
-
-def OLS(X, Y, Alpha=0.95):
-
-    # Solve linear system
-    XTXi = np.linalg.inv(X.T * X)
-    B = XTXi * X.T * Y
-
-    # Compute residuals, variance, and covariance matrix
-    Y_Obs = np.exp(Y)
-    Y_Fit = np.exp(X * B)
-    Residuals = Y - X*B
-    DOFs = len(Y) - X.shape[1]
-    Sigma = Residuals.T * Residuals / DOFs
-    Cov = Sigma[0,0] * XTXi
-
-    # Compute B confidence interval
-    t_Alpha = t.interval(Alpha, DOFs)
-    B_CI_Low = B.T + t_Alpha[0] * np.sqrt(np.diag(Cov))
-    B_CI_Top = B.T + t_Alpha[1] * np.sqrt(np.diag(Cov))
-
-    # Store parameters in data frame
-    Parameters = pd.DataFrame(columns=['Lambda0','Lambda0p','Mu0','k','l'])
-    Parameters.loc['Value'] = [np.exp(B[0,0]) - 2*np.exp(B[2,0]), np.exp(B[1,0]), np.exp(B[2,0]), B[3,0], B[4,0]]
-    Parameters.loc['95% CI Low'] = [np.exp(B_CI_Low[0,0]) - 2*np.exp(B_CI_Top[0,2]), np.exp(B_CI_Low[0,1]), np.exp(B_CI_Low[0,2]), B_CI_Low[0,3], B_CI_Low[0,4]]
-    Parameters.loc['95% CI Top'] = [np.exp(B_CI_Top[0,0]) - 2*np.exp(B_CI_Low[0,2]), np.exp(B_CI_Top[0,1]), np.exp(B_CI_Top[0,2]), B_CI_Top[0,3], B_CI_Top[0,4]]
-
-    # Compute R2 and standard error of the estimate
-    RSS = np.sum([R**2 for R in Residuals])
-    SE = np.sqrt(RSS / DOFs)
-    TSS = np.sum([R**2 for R in (Y - Y.mean())])
-    RegSS = TSS - RSS
-    R2 = RegSS / TSS
-
-    # Compute R2adj and NE
-    R2adj = 1 - RSS/TSS * (len(Y)-1)/(len(Y)-X.shape[1]-1)
-
-    NE = []
-    for i in range(0,len(Y),12):
-        T_Obs = Y_Obs[i:i+12]
-        T_Fit = Y_Fit[i:i+12]
-        Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
-        Denominator = np.sum([T**2 for T in T_Obs])
-        NE.append(np.sqrt(Numerator/Denominator))
-    NE = np.array(NE)
-
-
-    # Prepare data for plot
-    Line = np.linspace(min(Y.min(), (X*B).min()),
-                       max(Y.max(), (X*B).max()), len(Y))
-    # B_0 = np.sort(np.sqrt(np.diag(X * Cov * X.T)))
-    # CI_Line_u = np.exp(Line + t_Alpha[0] * B_0)
-    # CI_Line_o = np.exp(Line + t_Alpha[1] * B_0)
-
-    # Plots
-    DPI = 500
-    SMax = max([Y_Obs.max(), Y_Fit.max()]) * 5
-    SMin = min([Y_Obs.min(), Y_Fit.min()]) / 5
-    Colors=[(0,0,1),(0,1,0),(1,0,0)]
-
-    # Set boundaries of fabtib
-    SMax = 1e4
-    SMin = 1e-3
-
-    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
-    # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
-    Axes.plot(Y_Obs[X[:, 0] == 1], Y_Fit[X[:, 0] == 1],
-              color=Colors[0], linestyle='none', marker='s')
-    Axes.plot(Y_Obs[X[:, 1] == 1], Y_Fit[X[:, 1] == 1],
-              color=Colors[1], linestyle='none', marker='o')
-    Axes.plot(Y_Obs[X[:, 2] == 1], Y_Fit[X[:, 2] == 1],
-              color=Colors[2], linestyle='none', marker='^')
-    Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
-    Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
-    Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
-    Axes.plot(np.exp(Line), np.exp(Line), color=(0, 0, 0), linestyle='--')
-    Axes.annotate(r'N ROIs   : ' + str(len(Y)//12), xy=(0.3, 0.1), xycoords='axes fraction')
-    Axes.annotate(r'N Points : ' + str(len(Y)), xy=(0.3, 0.025), xycoords='axes fraction')
-    Axes.annotate(r'$R^2_{ajd}$: ' + format(round(R2adj, 3),'.3f'), xy=(0.65, 0.1), xycoords='axes fraction')
-    Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
-    Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
-    Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
-    Axes.set_xlim([SMin, SMax])
-    Axes.set_ylim([SMin, SMax])
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.legend(loc='upper left')
-    plt.subplots_adjust(left=0.15, bottom=0.15)
-    plt.show()
-
-    return Parameters, R2adj, NE
-
-
-
-
-def GetFabric(FileName):
-
-    Text = open(FileName,'r').readlines()
-    BVTV = float(Text[12].split('=')[1])
-    eValues = np.array(Text[18].split(':')[1].split(),float)
-    eVectors = np.zeros((3,3))
-    for i in range(3):
-        eVectors[i] = Text[19+i].split(':')[1].split()
-
-    return eValues, eVectors, BVTV
-
 def PlotFabricROI(ROI:np.array, eValues:np.array, eVectors:np.array, FileName:Path) -> None:
 
     """
@@ -705,113 +543,6 @@ def PlotStiffnessROI(ROI:np.array, StiffnessTensor:np.array, FileName:Path) -> N
     return
 
 
-def BoxPlot(ArraysList:list, Labels=['', 'Y'], SetsLabels=None,
-            Vertical=True, FigName=None, YLim=[], Ttest=None) -> None:
-    
-    """
-    Save boxplot of a list of arrays
-    Used for assessment on random effects and residuals
-    """
-
-    if Vertical == True:
-        Width = 2.5 + len(ArraysList)
-        Figure, Axis = plt.subplots(1,1, dpi=100, figsize=(Width,4.5))
-    else:
-        Height = len(ArraysList) - 0.5
-        Figure, Axis = plt.subplots(1,1, dpi=100, figsize=(6.5,Height))
-
-    for i, Array in enumerate(ArraysList):
-
-        # Create random positions
-        Array = np.sort(Array)
-        Norm = norm.pdf(np.linspace(-3,3,len(Array)), scale=1.5)
-        Norm = Norm / max(Norm)
-        RandPos = np.random.normal(0,0.03,len(Array)) * Norm + i
-
-        if Vertical == True:
-            Axis.plot(RandPos - RandPos.mean() + i, Array, linestyle='none',
-                        marker='o',fillstyle='none', color=(1,0,0), ms=5)
-        else:
-            Axis.plot(Array, RandPos - RandPos.mean() + i, linestyle='none',
-                        marker='o',fillstyle='none', color=(1,0,0), ms=5)
-            
-        Axis.boxplot(Array, vert=Vertical, widths=0.35,
-                    showmeans=True,meanline=True,
-                    showfliers=False, positions=[i],
-                    capprops=dict(color=(0,0,0)),
-                    boxprops=dict(color=(0,0,0)),
-                    whiskerprops=dict(color=(0,0,0),linestyle='--'),
-                    medianprops=dict(color=(0,1,0)),
-                    meanprops=dict(color=(0,0,1)))
-
-    if Ttest:
-        for i, A in enumerate(ArraysList[:-1]):
-
-            # Perform t-test
-            if Ttest == 'Rel':
-                T_Tests = ttest_rel(np.array(ArraysList[i+1],float), np.array(A,float))
-            else:
-                T_Tests = ttest_ind(np.array(ArraysList[i+1],float), np.array(A,float))
-            YLine = 1.05 * max(A.max(), ArraysList[i+1].max())
-            Plot = Axis.plot([i+0.05, i+0.95], [YLine, YLine], color=(0,0,0), marker='|',linewidth=0.5)
-            MarkerSize = Plot[0].get_markersize()
-            
-            # Mark significance level
-            if T_Tests[1] < 0.001:
-                Text = '***'
-            elif T_Tests[1] < 0.01:
-                Text = '**' 
-            elif T_Tests[1] < 0.05:
-                Text = '*'
-            else:
-                Text = 'n.s.'
-            Axis.annotate(Text, xy=[i+0.5, YLine], ha='center',
-                          xytext=(0, -1.5*MarkerSize), textcoords='offset points',)
-
-            # Write confidence interveal
-            CIl = round(T_Tests.confidence_interval()[0],1)
-            CIu = round(T_Tests.confidence_interval()[1],1)
-            Text = 'CI (' + str(CIl) + ',' + str(CIu) + ')'
-            Axis.annotate(Text, xy=[i+0.5, YLine], ha='center',
-                          xytext=(0, 1.2*MarkerSize), textcoords='offset points',)
-            if i == 0:
-                Max = YLine*1.05
-            else:
-                Max = max([Max, YLine*1.05])
-            Axis.set_ylim([0.95*min([min(A)for A in ArraysList]), Max])
-    
-    Axis.plot([],linestyle='none',marker='o',fillstyle='none', color=(1,0,0), label='Data')
-    Axis.plot([],color=(0,0,1), label='Mean', linestyle='--')
-    Axis.plot([],color=(0,1,0), label='Median')
-    Axis.set_xlabel(Labels[0])
-    Axis.set_ylabel(Labels[1])
-
-    if SetsLabels and Vertical==True:
-        Axis.set_xticks(np.arange(len(SetsLabels)))
-        Axis.set_xticklabels(SetsLabels, rotation=0)
-    elif SetsLabels and Vertical==False:
-        Axis.set_yticks(np.arange(len(SetsLabels)))
-        Axis.set_yticklabels(SetsLabels, rotation=0)
-    else:
-        Axis.set_xticks([])
-
-    if len(YLim) == 2:
-        Axis.set_ylim(YLim)
-    
-    if Vertical == True:
-        plt.legend(loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.125))
-        plt.subplots_adjust(left=0.25, right=0.75)
-    else:
-        plt.legend(loc='upper center', ncol=3, bbox_to_anchor=(0.5, 1.25))
-        plt.subplots_adjust(left=0.25, right=0.75,top=0.8)
-    
-    if FigName:
-        plt.savefig(FigName, bbox_inches='tight', pad_inches=0.02, dpi=196)
-    plt.show(Figure)
-
-    return
-
-
 #%% Main
 
 def Main():
@@ -873,6 +604,23 @@ def Main():
 
     # Get tensor back to engineering notation
     Stiffness = Mandel2EngineeringNotation(Orthotropic)
+
+    # Print results
+    print('\nStiffness matrix of isotropic material')
+    print(IsoStiffness)
+
+    print('\nStiffness matrix of transverse isotropic material')
+    print(TransStiffness)
+
+    print('\nStiffness matrix of transverse isotropic material in fabric coordinate system')
+    print(Stiffness)
+
+    E = 0.001
+    Nu = 0.3
+    np.matmul(IsoStiffness, np.array([E, -E*Nu, -E*Nu, 0, 0, 0,]))
+
+    E = 0.001
+    np.matmul(TransStiffness, np.array([E, -E*0.2, -E*0.3, 0, 0, 0,]))
 
 
 if __name__ == '__main__':
