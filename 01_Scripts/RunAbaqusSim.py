@@ -48,7 +48,7 @@ def Main(Arguments):
         DataPath = Path(__file__).parents[1] / '02_Results/Mesh/'
         AbaqusInps = sorted([F for F in Path.iterdir(DataPath) if F.name.endswith('Mesh.inp')])
 
-    for Input in AbaqusInps[10:12]:
+    for Input in AbaqusInps[12:24]:
         Image = sitk.ReadImage(str(Input)[:-9] + '.mhd')
         Size = [int(Si * Sp) for Si,Sp in zip(Image.GetSize(), Image.GetSpacing())]
         for Symmetry in ['Isotropic']:
