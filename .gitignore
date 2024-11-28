@@ -3,4 +3,4 @@
 *.raw
 
 # Ignore meshes (large files)
-Mesh/*
+02_Results/Mesh/*
