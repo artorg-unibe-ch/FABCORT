@@ -1,3 +1,6 @@
 # Ignore data files
 *.mhd
 *.raw
+
+# Ignore meshes (large files)
+Mesh/*
