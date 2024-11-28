@@ -4,3 +4,6 @@
 
 # Ignore meshes (large files)
 02_Results/Mesh/*
+
+# Ignore Medtool python files
+*abqSeReader.py
