@@ -666,135 +666,76 @@ def Main(Arguments):
         Samples = sorted([F.name[:-4] for F in Path.iterdir(FabricPath) if F.name.endswith('.fab')])
 
     Strain = np.array([0.001, 0.001, 0.001, 0.002, 0.002, 0.002])
-    X = np.matrix(np.zeros((len(Samples)*12, 5)))
-    Y = np.matrix(np.zeros((len(Samples)*12, 1)))
-    for s, Sample in enumerate([Samples[0]]):
 
-        # Get fabric info
-        eValues, eVectors, BVTV = GetFabric(FabricPath / (Sample + '.fab'))
+    s = 0
+    Sample = Samples[s]
 
-        # Sort fabric
-        Arg = np.argsort(eValues)
-        eValues = eValues[Arg]
-        eVectors = eVectors[Arg]
-        m1, m2, m3 = eValues
+    # Get fabric info
+    eValues, eVectors, BVTV = GetFabric(FabricPath / (Sample + '.fab'))
 
-        # Get homogenization stress results
-        Isotropic = open(IsoPath / (Sample + '.out'), 'r').readlines()
-        Transverse = open(TransPath / (Sample + '.out'), 'r').readlines()
+    # Sort fabric
+    Arg = np.argsort(eValues)
+    eValues = eValues[Arg]
+    eVectors = eVectors[Arg]
+    m1, m2, m3 = eValues
 
-        IsoStress = np.zeros((6,6))
-        TransStress = np.zeros((6,6))
-        for i in range(6):
-            for j in range(6):
-                IsoStress[i,j] = float(Isotropic[i+4].split()[j+1])
-                TransStress[i,j] = float(Transverse[i+4].split()[j+1])
+    # Get homogenization stress results
+    Isotropic = open(IsoPath / (Sample + '.out'), 'r').readlines()
+    Transverse = open(TransPath / (Sample + '.out'), 'r').readlines()
 
-        IsoStiffness = np.zeros((6,6))
-        TransStiffness = np.zeros((6,6))
-        for i in range(6):
-            for j in range(6):
-                IsoStiffness[i,j] = IsoStress[i,j] / Strain[i]
-                TransStiffness[i,j] = TransStress[i,j] / Strain[i]
+    IsoStress = np.zeros((6,6))
+    TransStress = np.zeros((6,6))
+    for i in range(6):
+        for j in range(6):
+            IsoStress[i,j] = float(Isotropic[i+4].split()[j+1])
+            TransStress[i,j] = float(Transverse[i+4].split()[j+1])
 
-        # Get Experiment RUS results
-        Octant = 'L' if '2L' in Sample else 'M'
-        Year = Sample[16:20]
-        Number = Sample[12:15]
-        F1 = RUSData['Octant'] == Octant
-        F2 = RUSData['sample'] == f'{Year}_{Number}'
-        Loc = RUSData[F1 & F2].index
-        C11 = RUSData.loc[Loc,'RUS:C11'].values[0]
-        C33 = RUSData.loc[Loc,'RUS:C33'].values[0]
-        C44 = RUSData.loc[Loc,'RUS:C44'].values[0]
-        C66 = RUSData.loc[Loc,'RUS:C66'].values[0]
-        C13 = RUSData.loc[Loc,'RUS:C13'].values[0]
-        C12 = C11 - 2*C66
+    IsoStiffness = np.zeros((6,6))
+    TransStiffness = np.zeros((6,6))
+    for i in range(6):
+        for j in range(6):
+            IsoStiffness[i,j] = IsoStress[i,j] / Strain[i]
+            TransStiffness[i,j] = TransStress[i,j] / Strain[i]
 
-        RUSStiffness = np.array([[C11, C12, C13,   0,   0,   0],
-                                 [C12, C11, C13,   0,   0,   0],
-                                 [C13, C13, C33,   0,   0,   0],
-                                 [  0,   0,   0, C44,   0,   0],
-                                 [  0,   0,   0,   0, C44,   0],
-                                 [  0,   0,   0,   0,   0, C66]])
+    # Get Experiment RUS results
+    Octant = 'L' if '2L' in Sample else 'M'
+    Year = Sample[16:20]
+    Number = Sample[12:15]
+    F1 = RUSData['Octant'] == Octant
+    F2 = RUSData['sample'] == f'{Year}_{Number}'
+    Loc = RUSData[F1 & F2].index
+    C11 = RUSData.loc[Loc,'RUS:C11'].values[0]
+    C33 = RUSData.loc[Loc,'RUS:C33'].values[0]
+    C44 = RUSData.loc[Loc,'RUS:C44'].values[0]
+    C66 = RUSData.loc[Loc,'RUS:C66'].values[0]
+    C13 = RUSData.loc[Loc,'RUS:C13'].values[0]
+    C12 = C11 - 2*C66
 
-        # Investigate anisotropy
-        F_DA = [eValues[1] / eValues[0], eValues[2] / eValues[0], eValues[2] / eValues[1]]
-        I_DA = [IsoStiffness[1,1] / IsoStiffness[0,0], IsoStiffness[2,2] / IsoStiffness[0,0], IsoStiffness[2,2] / IsoStiffness[1,1]]
-        T_DA = [TransStiffness[1,1] / TransStiffness[0,0], TransStiffness[2,2] / TransStiffness[0,0], TransStiffness[2,2] / TransStiffness[1,1]]
-        E_DA = [RUSStiffness[1,1] / RUSStiffness[0,0], RUSStiffness[2,2] / RUSStiffness[0,0], RUSStiffness[2,2] / RUSStiffness[1,1]]
-        DA = ['$e_2$ / $e_1$', '$e_3$ / $e_1$', '$e_3$ / $e_2$']
+    RUSStiffness = np.array([[C11, C12, C13,   0,   0,   0],
+                                [C12, C11, C13,   0,   0,   0],
+                                [C13, C13, C33,   0,   0,   0],
+                                [  0,   0,   0, C44,   0,   0],
+                                [  0,   0,   0,   0, C44,   0],
+                                [  0,   0,   0,   0,   0, C66]])
 
-        Figure, Axis = plt.subplots(1,1)
-        Axis.plot(F_DA, color=(1,0,0), linestyle='none', marker='o', label='Fabric')
-        Axis.plot(I_DA, color=(1,0,1), linestyle='none', marker='o', label='Isotropic')
-        Axis.plot(T_DA, color=(0,0,1), linestyle='none', marker='o', label='Transverse')
-        Axis.plot(E_DA, color=(0,0,0), linestyle='none', marker='o', label='Experiment')
-        Axis.set_xticks(np.arange(3))
-        Axis.set_xticklabels(DA)
-        Axis.set_xlabel('Plane')
-        Axis.set_ylabel('Degree of anisotropy')
-        plt.legend()
-        plt.show(Figure)
+    # Investigate anisotropy
+    F_DA = [eValues[1] / eValues[0], eValues[2] / eValues[0], eValues[2] / eValues[1]]
+    I_DA = [IsoStiffness[1,1] / IsoStiffness[0,0], IsoStiffness[2,2] / IsoStiffness[0,0], IsoStiffness[2,2] / IsoStiffness[1,1]]
+    T_DA = [TransStiffness[1,1] / TransStiffness[0,0], TransStiffness[2,2] / TransStiffness[0,0], TransStiffness[2,2] / TransStiffness[1,1]]
+    E_DA = [RUSStiffness[1,1] / RUSStiffness[0,0], RUSStiffness[2,2] / RUSStiffness[0,0], RUSStiffness[2,2] / RUSStiffness[1,1]]
+    DA = ['$e_2$ / $e_1$', '$e_3$ / $e_1$', '$e_3$ / $e_2$']
 
-
-
-        
-
-        # Symetrize matrix
-        Stiffness = 1/2 * (Stiffness + Stiffness.T)
-
-        # Write tensor into mandel notation
-        Mandel = Engineering2MandelNotation(Stiffness)
-
-        # Step 3: Transform tensor into fabric coordinate system
-        I = np.eye(3)
-        Q = np.array(eVectors)
-        Transformed = TransformTensor(Mandel, I, Q)
-
-        # Project onto orthotropy
-        Orthotropic = np.zeros(Transformed.shape)
-        for i in range(Orthotropic.shape[0]):
-            for j in range(Orthotropic.shape[1]):
-                if i < 3 and j < 3:
-                    Orthotropic[i, j] = Transformed[i, j]
-                elif i == j:
-                    Orthotropic[i, j] = Transformed[i, j]
-
-        # Get tensor back to engineering notation
-        Stiffness = Mandel2EngineeringNotation(Orthotropic)
-
-        # Build linear system
-        Start, Stop = 12*s, 12*(s+1)
-        Y[Start:Stop] = np.log([[Stiffness[0,0]],
-                                [Stiffness[0,1]],
-                                [Stiffness[0,2]],
-                                [Stiffness[1,0]],
-                                [Stiffness[1,1]],
-                                [Stiffness[1,2]],
-                                [Stiffness[2,0]],
-                                [Stiffness[2,1]],
-                                [Stiffness[2,2]],
-                                [Stiffness[1,2]],
-                                [Stiffness[2,0]],
-                                [Stiffness[0,1]]])
-        
-        X[Start:Stop] = np.array([[1, 0, 0, np.log(BVTV), np.log(m1 ** 2)],
-                                [0, 1, 0, np.log(BVTV), np.log(m1 * m2)],
-                                [0, 1, 0, np.log(BVTV), np.log(m1 * m3)],
-                                [0, 1, 0, np.log(BVTV), np.log(m2 * m1)],
-                                [1, 0, 0, np.log(BVTV), np.log(m2 ** 2)],
-                                [0, 1, 0, np.log(BVTV), np.log(m2 * m3)],
-                                [0, 1, 0, np.log(BVTV), np.log(m3 * m1)],
-                                [0, 1, 0, np.log(BVTV), np.log(m3 * m2)],
-                                [1, 0, 0, np.log(BVTV), np.log(m3 ** 2)],
-                                [0, 0, 1, np.log(BVTV), np.log(m2 * m3)],
-                                [0, 0, 1, np.log(BVTV), np.log(m3 * m1)],
-                                [0, 0, 1, np.log(BVTV), np.log(m1 * m2)]])
-        
-
-    # Solve linear system
-    Parameters, R2adj, NE = OLS(X, Y)
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(F_DA, color=(1,0,0), linestyle='none', marker='o', label='Fabric')
+    Axis.plot(I_DA, color=(1,0,1), linestyle='none', marker='o', label='Isotropic')
+    Axis.plot(T_DA, color=(0,0,1), linestyle='none', marker='o', label='Transverse')
+    Axis.plot(E_DA, color=(0,0,0), linestyle='none', marker='o', label='Experiment')
+    Axis.set_xticks(np.arange(3))
+    Axis.set_xticklabels(DA)
+    Axis.set_xlabel('Plane')
+    Axis.set_ylabel('Degree of anisotropy')
+    plt.legend()
+    plt.show(Figure)
 
 
 if __name__ == '__main__':
