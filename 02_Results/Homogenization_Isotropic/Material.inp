@@ -1,0 +1,14 @@
+**********************************************
+**
+**        Material Abaqus input File
+**    Mathieu Simon, ARTORG Center, 2024 
+**
+**********************************************
+** Material Property Elastic 1
+*SOLID SECTION, ELSET=SET2, MATERIAL=MATSET2
+1.
+*MATERIAL,NAME=MATSET2
+*ELASTIC
+10000, 0.3
+**
+***********************************************
