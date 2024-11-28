@@ -89,6 +89,9 @@ def ComplianceTensor(E1, E2, E3, Mu23, Mu31, Mu12, Nu12, Nu13, Nu23, EigenVector
 
     return ComplianceTensor
 
+
+
+
 def Engineering2MandelNotation(A):
 
     B = np.zeros((6,6))
@@ -437,6 +440,9 @@ def Mandel2EngineeringNotation(A):
                 B[i, j] = A[i, j]
 
     return B
+
+
+
 
 def OLS(X, Y, Alpha=0.95):
 
@@ -843,15 +849,10 @@ def Main():
         for j in range(6):
             IsoStiffness[i,j] = IsoStress[i,j] / Strain[i]
             TransStiffness[i,j] = TransStress[i,j] / Strain[i]
-            FabStiffness[i,j] = FabStiffness[i,j] / Strain[i]
+            FabStiffness[i,j] = FabStress[i,j] / Strain[i]
 
-    
-
-
-    
-
-    # Symetrize matrix
-    Stiffness = 1/2 * (Stiffness + Stiffness.T)
+    # Transform fabric stiffness into fabric coordinate system
+    Stiffness = 1/2 * (FabStiffness + FabStiffness.T)
 
     # Write tensor into mandel notation
     Mandel = Engineering2MandelNotation(Stiffness)
@@ -872,38 +873,6 @@ def Main():
 
     # Get tensor back to engineering notation
     Stiffness = Mandel2EngineeringNotation(Orthotropic)
-
-    # Build linear system
-    Start, Stop = 12*s, 12*(s+1)
-    Y[Start:Stop] = np.log([[Stiffness[0,0]],
-                            [Stiffness[0,1]],
-                            [Stiffness[0,2]],
-                            [Stiffness[1,0]],
-                            [Stiffness[1,1]],
-                            [Stiffness[1,2]],
-                            [Stiffness[2,0]],
-                            [Stiffness[2,1]],
-                            [Stiffness[2,2]],
-                            [Stiffness[1,2]],
-                            [Stiffness[2,0]],
-                            [Stiffness[0,1]]])
-    
-    X[Start:Stop] = np.array([[1, 0, 0, np.log(BVTV), np.log(m1 ** 2)],
-                            [0, 1, 0, np.log(BVTV), np.log(m1 * m2)],
-                            [0, 1, 0, np.log(BVTV), np.log(m1 * m3)],
-                            [0, 1, 0, np.log(BVTV), np.log(m2 * m1)],
-                            [1, 0, 0, np.log(BVTV), np.log(m2 ** 2)],
-                            [0, 1, 0, np.log(BVTV), np.log(m2 * m3)],
-                            [0, 1, 0, np.log(BVTV), np.log(m3 * m1)],
-                            [0, 1, 0, np.log(BVTV), np.log(m3 * m2)],
-                            [1, 0, 0, np.log(BVTV), np.log(m3 ** 2)],
-                            [0, 0, 1, np.log(BVTV), np.log(m2 * m3)],
-                            [0, 0, 1, np.log(BVTV), np.log(m3 * m1)],
-                            [0, 0, 1, np.log(BVTV), np.log(m1 * m2)]])
-    
-
-    # Solve linear system
-    Parameters, R2adj, NE = OLS(X, Y)
 
 
 if __name__ == '__main__':
