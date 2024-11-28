@@ -1,0 +1,33 @@
+*********************************************************
+** File   : Cube_Mesh_temp.inp 
+** Author : by medtool 
+** Date   : 2024-11-27 16:57:40 
+*********************************************************
+*HEADING
+Input Deck Cube_Mesh
+** Nodal data extracted from image
+*NODE
+1, 0, 0, 0
+2, 1, 0, 0
+3, 1, 1, 0
+4, 0, 1, 0
+5, 0, 0, 1
+6, 1, 0, 1
+7, 1, 1, 1
+8, 0, 1, 1
+** Element (C3D8) + Elset (SetName) extracted from image
+*ELEMENT, TYPE=C3D8, ELSET=SET2
+1,1,2,3,4,5,6,7,8
+** Node Sets
+*NSET, NSET=ALL_NODE_S
+1,2,5,6
+*NSET, NSET=ALL_NODE_N
+3,4,7,8
+*NSET, NSET=ALL_NODE_E
+2,3,6,7
+*NSET, NSET=ALL_NODE_W
+1,4,5,8
+*NSET, NSET=ALL_NODE_T
+5,6,7,8
+*NSET, NSET=ALL_NODE_B
+1,2,3,4
