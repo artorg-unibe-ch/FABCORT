@@ -3,7 +3,8 @@
 *.raw
 
 # Ignore meshes (large files)
-02_Results/Mesh/*
+*Mesh.inp
+*KUBCs.inp
 
 # Ignore Medtool python files
 *abqSeReader.py
