@@ -8,3 +8,4 @@
 
 # Ignore Medtool python files
 *abqSeReader.py
+*dpUtils.py
