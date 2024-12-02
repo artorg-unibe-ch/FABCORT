@@ -492,7 +492,6 @@ def Main():
     Y2 = np.matrix(np.zeros((len(ROIs)*4, 1)))
     X3 = np.matrix(np.zeros((len(ROIs)*4, 5)))
     Y3 = np.matrix(np.zeros((len(ROIs)*4, 1)))
-
     for ROI in ROIs:
         # Get fabric info
         # if ROI[-1] == '1':
@@ -516,6 +515,29 @@ def Main():
         for i in range(6):
             for j in range(6):
                 Stiffness[i,j] = Stress[i,j] / Strain[i]
+
+        # Store results for comparison
+        if ROI[-1] == '1':
+            if ROI[4] == '1':
+                S11 = Stiffness
+            elif ROI[4] == '2':
+                S21 = Stiffness
+            else:
+                S31 = Stiffness
+        if ROI[-1] == '2':
+            if ROI[4] == '1':
+                S12 = Stiffness
+            elif ROI[4] == '2':
+                S22 = Stiffness
+            else:
+                S32 = Stiffness
+        if ROI[-1] == '4':
+            if ROI[4] == '1':
+                S14 = Stiffness
+            elif ROI[4] == '2':
+                S24 = Stiffness
+            else:
+                S34 = Stiffness
 
         # Symetrize matrix
         Stiffness = 1/2 * (Stiffness + Stiffness.T)
@@ -583,11 +605,22 @@ def Main():
     Parameters2, R2adj2, NE2 = OLS(X2, Y2)
     Parameters3, R2adj3, NE3 = OLS(X3, Y3)
 
+    # Compare results
     NE2.mean() / NE1.mean()
     NE3.mean() / NE1.mean()
-
     R2adj2 / R2adj1
     R2adj3 / R2adj1
+
+    # Compare elasticity (norm error)
+    NE2 = []
+    for Test, Ref in zip([S12,S22,S32], [S11,S21,S31]):
+        NE2.append(np.sqrt(np.sum((Test - Ref)**2) / np.sum(Ref**2)))
+    print(f'Norm error with 2 factor: {round(np.mean(NE2),3)}')
+
+    NE4 = []
+    for Test, Ref in zip([S14,S24,S34], [S11,S21,S31]):
+        NE4.append(np.sqrt(np.sum((Test - Ref)**2) / np.sum(Ref**2)))
+    print(f'Norm error with 4 factor: {round(np.mean(NE4),3)}')
 
 if __name__ == '__main__':
     # Initiate the parser with a description
