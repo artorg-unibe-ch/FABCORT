@@ -255,7 +255,7 @@ abaqus python "/home/ms20s284/FABCORT/Scripts/abqSeReader.py" in="/home/ms20s284
 rm * 
 """
 
-    with open('RunAbaqus.bash','a') as File:
+    with open(Path(__file__).parent / 'RunAbaqus.bash','a') as File:
         File.write(Text)
 
     return
@@ -268,19 +268,19 @@ def Main():
     DataPath = Path(__file__).parent / 'Abaqus'
     AbaqusInps = sorted([F for F in DataPath.iterdir() if F.name.endswith('Mesh.inp')])
 
-    with open('RunAbaqus.bash','a') as File:
+    with open(Path(__file__).parent / 'RunAbaqus.bash','a') as File:
         File.write('# Bash script to run abaqus simulations and get homogenized stress\n')
     
     for Input in AbaqusInps:
 
-        # # If temporary file, remove it
-        # TempFile = str(Input)[:-4] + '_temp.inp'
-        # if Path(TempFile).exists():
-        #     Path(TempFile).unlink()
+        # If temporary file, remove it
+        TempFile = str(Input)[:-4] + '_temp.inp'
+        if Path(TempFile).exists():
+            Path(TempFile).unlink()
 
         Image = sitk.ReadImage(str(Input)[:-9] + '.mhd')
         Size = [int(Si * Sp) for Si,Sp in zip(Image.GetSize(), Image.GetSpacing())]
-        # WriteMain(Input, Size)
+        WriteMain(Input, Size)
 
         WriteBash(Input.name, Size)
 
