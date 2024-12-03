@@ -17,7 +17,10 @@ import argparse
 import numpy as np
 from pathlib import Path
 import SimpleITK as sitk
+import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
+from matplotlib.patches import Rectangle
+
 
 np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
@@ -34,7 +37,48 @@ def GetFabric(FileName):
 
     return eValues, eVectors, BVTV
 
-def ROISelection(Shape, NROIs, ROISize):
+def HRASampling(Boundaries, NROIs, Factor=10):
+    """
+    Implements High-Resolution Antialiasing-inspired sampling for even ROI distribution.
+    
+    Parameters:
+        Shape (tuple): Dimensions of the 3D array (m, n, o).
+        NROIs (int): Number of ROIs to generate.
+        Factor (int): Factor for oversampling the space.
+
+    Returns:
+        np.ndarray: ROI positions [(x, y, z), ...].
+    """
+    
+    # Step 1: Oversample the space with a dense grid of candidate points
+    Candidates = Factor * NROIs
+    Min = Boundaries.min(axis=0)
+    Max = Boundaries.max(axis=0)
+    Candidates = np.linspace(Min, Max, NROIs*Factor)
+
+    # Step 2: Initialize first ROI point
+    if NROIs % 2 == 0:
+        ROIs = [Min]
+    else:
+        ROIs = [Boundaries.mean(axis=0) / 2]
+
+    # Step 3: Iteratively select points to maximize minimum distance
+    for i in range(NROIs - 1):
+
+        # Compute distances from all candidates to existing ROIs
+        Differences = Candidates[:, np.newaxis, :] - np.array(ROIs)[np.newaxis, :, :]
+        Distances = np.linalg.norm(Differences, axis=-1)  # Shape: (num_candidates, len(rois))
+
+        # Select the candidate with the maximum minimum distance
+        BestCandidate = np.argmax(Distances.min(axis=1))
+        ROIs.append(Candidates[BestCandidate])
+        
+        # Remove the selected candidate to avoid duplicates
+        Candidates = np.delete(Candidates, BestCandidate, axis=0)
+
+    return np.array(ROIs)
+
+def LloydsAlgorithm(Shape, NROIs, ROISize):
     """
     Implements Lloyd's algorithm (Voronoi Relaxation) to distribute ROIs evenly in a 3D rectangular array
     using NumPy vectorization.
@@ -106,6 +150,167 @@ def ROISelection(Shape, NROIs, ROISize):
     print(f'Converged in {Iteration} iterations')
 
     return np.round(Points[8:]).astype(int)
+
+def FibonacciSphere(N):
+
+    """
+    Generate a sphere with (almost) equidistant points
+    https://arxiv.org/pdf/0912.4540.pdf
+    """
+
+    if N > 1:
+
+        i = np.arange(N)
+        Phi = np.pi * (np.sqrt(5) - 1)  # golden angle in radians
+
+        Z = 1 - (i / float(N - 1)) * 2  # z goes from 1 to -1
+        Radius = np.sqrt(1 - Z*Z)     # radius at z
+
+        Theta = Phi * i                 # golden angle increment
+
+        X = np.cos(Theta) * Radius
+        Y = np.sin(Theta) * Radius
+
+        return np.vstack([X,Y,Z]).T
+    
+    else:
+        return np.array([[0,0,0]])
+
+def PlotROIs(Shape, Boundaries, ROIs, ROISize):
+    """
+    Plot the ROI results in 2D projections (xy, xz, yz) with contours, boundaries, and ROI squares.
+    
+    Parameters:
+    - Shape (tuple): Dimensions of the 3D space, specified as (X, Y, Z).
+    - Boundaries (numpy.ndarray): Array of boundary points, shape (8, 3).
+    - ROIs (list): List of ROI coordinates, where each is a tuple (x, y, z).
+    - ROISize (float): Size of each ROI square.
+    """
+    # Define projection planes
+    projections = ['xy', 'xz', 'yz']
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+    for i, proj in enumerate(projections):
+        ax = axes[i]
+        ax.set_title(f"Projection: {proj}")
+        
+        # Set limits and aspect ratio
+        if proj == 'xy':
+            ax.plot([0, Shape[0]], [0, 0], color=(0,0,1), label='Contour', linewidth=2)
+            ax.plot([Shape[0], Shape[0]], [0, Shape[1]], color=(0,0,1), linewidth=2)
+            ax.plot([Shape[0], 0], [Shape[1], Shape[1]], color=(0,0,1), linewidth=2)
+            ax.plot([0, 0], [Shape[1],0], color=(0,0,1), linewidth=2)
+            x1 = Boundaries.min(axis=0)[0] - ROISize / 2
+            x2 = Boundaries.max(axis=0)[0] + ROISize / 2
+            y1 = Boundaries.min(axis=0)[1] - ROISize / 2
+            y2 = Boundaries.max(axis=0)[1] + ROISize / 2
+            ax.fill_between([x1,x2], [y1,y1], [y2,y2], color=(0,0,0,0.2), label='Boundaries')
+            idx1, idx2 = 0, 1
+        elif proj == 'xz':
+            ax.plot([0, Shape[0]], [0, 0], color=(0,0,1), label='Contour', linewidth=2)
+            ax.plot([Shape[0], Shape[0]], [0, Shape[2]], color=(0,0,1), linewidth=2)
+            ax.plot([Shape[0], 0], [Shape[2], Shape[2]], color=(0,0,1), linewidth=2)
+            ax.plot([0, 0], [Shape[2],0], color=(0,0,1), linewidth=2)
+            x1 = Boundaries.min(axis=0)[0] - ROISize / 2
+            x2 = Boundaries.max(axis=0)[0] + ROISize / 2
+            y1 = Boundaries.min(axis=0)[2] - ROISize / 2
+            y2 = Boundaries.max(axis=0)[2] + ROISize / 2
+            ax.fill_between([x1,x2], [y1,y1], [y2,y2], color=(0,0,0,0.2), label='Boundaries')
+            idx1, idx2 = 0, 2
+        elif proj == 'yz':
+            ax.plot([0, Shape[1]], [0, 0], color=(0,0,1), label='Contour', linewidth=2)
+            ax.plot([Shape[1], Shape[1]], [0, Shape[2]], color=(0,0,1), linewidth=2)
+            ax.plot([Shape[1], 0], [Shape[2], Shape[2]], color=(0,0,1), linewidth=2)
+            ax.plot([0, 0], [Shape[2],0], color=(0,0,1), linewidth=2)
+            x1 = Boundaries.min(axis=0)[1] - ROISize / 2
+            x2 = Boundaries.max(axis=0)[1] + ROISize / 2
+            y1 = Boundaries.min(axis=0)[2] - ROISize / 2
+            y2 = Boundaries.max(axis=0)[2] + ROISize / 2
+            ax.fill_between([x1,x2], [y1,y1], [y2,y2], color=(0,0,0,0.2), label='Boundaries')
+            idx1, idx2 = 1, 2
+        ax.set_aspect('equal')
+
+        # Step 2: Draw the boundaries in red
+        x = Boundaries[:, idx1]
+        y = Boundaries[:, idx2]
+
+        # Step 3: Plot ROI squares in blue transparent
+        for roi in ROIs:
+            x_roi = roi[idx1] - ROISize / 2
+            y_roi = roi[idx2] - ROISize / 2
+            ax.add_patch(Rectangle(
+                            (x_roi, y_roi),
+                            ROISize, ROISize,
+                            edgecolor='red',
+                            facecolor='none',
+                            linewidth=2.5,
+                            label="ROI Square"
+                        ))
+
+        # Add legend
+        # ax.legend()
+
+    plt.tight_layout()
+    plt.savefig(str(Path(__file__).parent / 'ROIs' / f'ROI_S{len(ROIs)}.png'))
+    plt.close(fig)
+
+def ROISelection(Shape, NROIs, ROISize):
+    """
+    Generate a specified number of Regions of Interest (ROIs) within a 3D space, ensuring uniform distribution 
+    using Fibonacci sphere sampling and adapting the ROIs to the given constraints.
+
+    Parameters:
+    - Shape (tuple): Dimensions of the 3D space, specified as (X, Y, Z).
+    - NROIs (int): Number of ROIs to generate.
+    - ROISize (float): The size of each ROI, which determines the offset from the edges of the space.
+
+    Returns:
+    - list: A list of ROI coordinates, where each coordinate is a tuple (x, y, z).
+    """
+
+    # Set limits
+    Xmin, Xmax = ROISize/4*3, Shape[0]-ROISize/4*3
+    Ymin, Ymax = ROISize/4*3, Shape[1]-ROISize/4*3
+    Zmin, Zmax = ROISize/4*3, Shape[2]-ROISize/4*3
+
+    # Set boundary points
+    Boundaries = np.array([[ Xmin, Ymin, Zmin],
+                           [ Xmax, Ymin, Zmin],
+                           [ Xmin, Ymax, Zmin],
+                           [ Xmin, Ymin, Zmax],
+                           [ Xmax, Ymax, Zmin],
+                           [ Xmax, Ymin, Zmax],
+                           [ Xmin, Ymax, Zmax],
+                           [ Xmax, Ymax, Zmax]])
+        
+    # Compute center and range
+    Center = Boundaries.mean(axis=0)
+    Range = (Boundaries.max(axis=0) - Boundaries.min(axis=0))/2
+
+    # Generate directions
+    Directions = FibonacciSphere(NROIs)
+
+    # Scale each point to the boundaries
+    ROIs = []
+    for dx, dy, dz in Directions:
+
+        # Determine scaling factor based on boundaries in the direction
+        MaxRadius = min(
+            Range[0] / abs(dx) if dx != 0 else float('inf'),
+            Range[1] / abs(dy) if dy != 0 else float('inf'),
+            Range[2] / abs(dz) if dz != 0 else float('inf')
+        )
+        if MaxRadius == np.inf:
+            MaxRadius = 0
+        # Scale and center
+        xROI = Center[0] + dx * MaxRadius
+        yROI = Center[1] + dy * MaxRadius
+        zROI = Center[2] + dz * MaxRadius
+        ROIs.append((xROI, yROI, zROI))
+
+    PlotROIs(Shape, Boundaries, ROIs, ROISize)
+    
+    return ROIs
 
 def Resample(Image, Factor=None, Size=[None], Spacing=[None], Order=1):
 
