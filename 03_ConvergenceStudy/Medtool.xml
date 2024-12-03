@@ -1,5 +1,5 @@
 <!DOCTYPE MedToolXML>
-<MedToolXML writeonly="yes" cpu="1" workdir="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT" exefile="" resfile="" level="Expert" paramfile="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT/03_ConvergenceStudy/Parameters.csv">
+<MedToolXML exefile="" level="Expert" writeonly="yes" paramfile="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT/03_ConvergenceStudy/Parameters.csv" resfile="" cpu="1" workdir="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT">
  <_Segmentation script="mic" active="yes">
   <modulName>
    <description>mic - medical image converter</description>
