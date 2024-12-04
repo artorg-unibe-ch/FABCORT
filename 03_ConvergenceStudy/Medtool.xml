@@ -1,13 +1,13 @@
 <!DOCTYPE MedToolXML>
-<MedToolXML exefile="" level="Expert" writeonly="yes" paramfile="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT/03_ConvergenceStudy/Parameters.csv" resfile="" cpu="1" workdir="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT">
- <_Segmentation script="mic" active="yes">
+<MedToolXML exefile="" cpu="1" paramfile="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT/03_ConvergenceStudy/Parameters.csv" level="Expert" writeonly="yes" resfile="" workdir="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT">
+ <_Segmentation active="yes" script="mic">
   <modulName>
    <description>mic - medical image converter</description>
   </modulName>
   <in>
    <description>Image input file name | filename</description>
    <type>fileEntryIn</type>
-   <value>03_ConvergenceStudy/ROIs/ROI_S$Sampling_N$ROI.mhd</value>
+   <value>03_ConvergenceStudy/ROIs/ROI_$ROI.mhd</value>
    <default>slice.mhd</default>
    <optional>no</optional>
    <active>yes</active>
@@ -29,7 +29,7 @@
   <out>
    <description>Image output file name | filename</description>
    <type>fileEntryOut</type>
-   <value>03_ConvergenceStudy/Abaqus/ROI_S$Sampling_N$ROI.mhd</value>
+   <value>03_ConvergenceStudy/Abaqus/ROI_$ROI.mhd</value>
    <default>test.mhd</default>
    <optional>yes</optional>
    <active>yes</active>
@@ -918,14 +918,14 @@
    <menu>Image Infos</menu>
   </cog>
  </_Segmentation>
- <_Compute script="mic" active="yes">
+ <_Compute active="yes" script="mic">
   <modulName>
    <description>mic - medical image converter</description>
   </modulName>
   <in>
    <description>Image input file name | filename</description>
    <type>fileEntryIn</type>
-   <value>03_ConvergenceStudy/Abaqus/ROI_S$Sampling_N$ROI.mhd</value>
+   <value>03_ConvergenceStudy/Abaqus/ROI_$ROI.mhd</value>
    <default>slice.mhd</default>
    <optional>no</optional>
    <active>yes</active>
@@ -947,7 +947,7 @@
   <out>
    <description>Image output file name | filename</description>
    <type>fileEntryOut</type>
-   <value>03_ConvergenceStudy/Abaqus/ROI_S$Sampling_N$ROI.mhd</value>
+   <value>03_ConvergenceStudy/Abaqus/ROI_$ROI.mhd</value>
    <default>test.mhd</default>
    <optional>yes</optional>
    <active>yes</active>
@@ -1836,14 +1836,14 @@
    <menu>Image Infos</menu>
   </cog>
  </_Compute>
- <_FE script="imgToFe" active="yes">
+ <_FE active="yes" script="imgToFe">
   <modulName>
    <description>Template Script</description>
   </modulName>
   <in>
    <description>Image file name | filename</description>
    <type>fileEntryIn</type>
-   <value>03_ConvergenceStudy/Abaqus/ROI_S$Sampling_N$ROI.mhd</value>
+   <value>03_ConvergenceStudy/Abaqus/ROI_$ROI.mhd</value>
    <default>image.mhd</default>
    <optional>no</optional>
    <active>yes</active>
@@ -1854,7 +1854,7 @@
   <out>
    <description>FEA job output file | filename</description>
    <type>fileEntryOut</type>
-   <value>03_ConvergenceStudy/Abaqus/ROI_S$Sampling_N$ROI_Mesh.inp</value>
+   <value>03_ConvergenceStudy/Abaqus/ROI_$ROI_Mesh.inp</value>
    <default>model.inp</default>
    <optional>no</optional>
    <active>yes</active>
@@ -1984,14 +1984,14 @@
    <menu>Result Output</menu>
   </nodedat>
  </_FE>
- <_KUBCs script="cbc" active="yes">
+ <_KUBCs active="yes" script="cbc">
   <modulName>
    <description>cbc</description>
   </modulName>
   <in>
    <description>Abaqus Input File Name</description>
    <type>fileEntryInEdit</type>
-   <value>03_ConvergenceStudy/Abaqus/ROI_S$Sampling_N$ROI_Mesh.inp</value>
+   <value>03_ConvergenceStudy/Abaqus/ROI_$ROI_Mesh.inp</value>
    <default>testIn.inp</default>
    <optional>no</optional>
    <active>yes</active>
@@ -2002,7 +2002,7 @@
   <out>
    <description>Abaqus Output File Name</description>
    <type>fileEntryOut</type>
-   <value>03_ConvergenceStudy/Abaqus/ROI_S$Sampling_N$ROI_KUBCs.inp</value>
+   <value>03_ConvergenceStudy/Abaqus/ROI_$ROI_KUBCs.inp</value>
    <default>testOut.inp</default>
    <optional>no</optional>
    <active>yes</active>
@@ -2044,4 +2044,196 @@
    <menu>Common</menu>
   </tol>
  </_KUBCs>
+ <_Fabric active="yes" script="mia">
+  <modulName>
+   <description>MIA - Medical Image Analyzer</description>
+  </modulName>
+  <in>
+   <description>Input File Name</description>
+   <type>fileEntryIn</type>
+   <value>03_ConvergenceStudy/Abaqus/ROI_$ROI.mhd</value>
+   <default>test.mhd</default>
+   <optional>no</optional>
+   <active>yes</active>
+   <info>mhd;rawdp</info>
+   <level>Simple</level>
+   <menu>Common</menu>
+  </in>
+  <out>
+   <description>Analysis Output File Name</description>
+   <type>entry</type>
+   <value>03_ConvergenceStudy/Results/ROI_$ROI.fab</value>
+   <default>test.fab</default>
+   <optional>no</optional>
+   <active>yes</active>
+   <info>fab;txt;dat</info>
+   <level>Simple</level>
+   <menu>Common</menu>
+  </out>
+  <dtype>
+   <description>Distribution Type</description>
+   <type>combo</type>
+   <value>MIL</value>
+   <default>MIL</default>
+   <optional>no</optional>
+   <active>yes</active>
+   <info>MIL;SLD;SVD;GST;MSL;TRI</info>
+   <level>Simple</level>
+   <menu>Common</menu>
+  </dtype>
+  <ftype>
+   <description>Fabric Approximation Type</description>
+   <type>combo</type>
+   <value>1</value>
+   <default>1</default>
+   <optional>no</optional>
+   <active>yes</active>
+   <info>1;2;4</info>
+   <level>Simple</level>
+   <menu>Common</menu>
+  </ftype>
+  <thres>
+   <description>Threshold (value)</description>
+   <type>entry</type>
+   <value>2</value>
+   <default>75</default>
+   <optional>yes</optional>
+   <active>yes</active>
+   <info>1</info>
+   <level>Standard</level>
+   <menu>Common</menu>
+  </thres>
+  <step>
+   <description>Ray Distance in # of Voxels (>1)</description>
+   <type>entry</type>
+   <value>5</value>
+   <default>5</default>
+   <optional>yes</optional>
+   <active>no</active>
+   <info>1</info>
+   <level>Expert</level>
+   <menu>Solution Parameter</menu>
+  </step>
+  <power>
+   <description>Power of Star Directions = 8*4^n</description>
+   <type>entry</type>
+   <value>2</value>
+   <default>2</default>
+   <optional>yes</optional>
+   <active>no</active>
+   <info>1</info>
+   <level>Expert</level>
+   <menu>Solution Parameter</menu>
+  </power>
+  <valid>
+   <description>Min. Valid Intersection Lenght (>=0)</description>
+   <type>entry</type>
+   <value>0.0</value>
+   <default>0.0</default>
+   <optional>yes</optional>
+   <active>no</active>
+   <info>1</info>
+   <level>Expert</level>
+   <menu>Solution Parameter</menu>
+  </valid>
+  <code>
+   <description>Code of the core routines</description>
+   <type>combo</type>
+   <value>f77</value>
+   <default>f77</default>
+   <optional>yes</optional>
+   <active>no</active>
+   <info>f77;py</info>
+   <level>Expert</level>
+   <menu>Solution Parameter</menu>
+  </code>
+  <gstpow>
+   <description>Power for GST method</description>
+   <type>entry</type>
+   <value>0.5</value>
+   <default>0.5</default>
+   <optional>yes</optional>
+   <active>no</active>
+   <info>1</info>
+   <level>Expert</level>
+   <menu>Solution Parameter</menu>
+  </gstpow>
+  <norm>
+   <description>Fabric Normalization</description>
+   <type>combo</type>
+   <value>trace</value>
+   <default>det</default>
+   <optional>yes</optional>
+   <active>yes</active>
+   <info>det;rank;trace</info>
+   <level>Expert</level>
+   <menu>Solution Parameter</menu>
+  </norm>
+  <stype>
+   <description>Surface Extraction Algorithm</description>
+   <type>combo</type>
+   <value>vxi_m</value>
+   <default>vxi_m</default>
+   <optional>yes</optional>
+   <active>no</active>
+   <info>vxi_m;vxi_mi</info>
+   <level>Expert</level>
+   <menu>Solution Parameter</menu>
+  </stype>
+  <mod>
+   <description>Write Mode</description>
+   <type>combo</type>
+   <value>w</value>
+   <default>w</default>
+   <optional>yes</optional>
+   <active>no</active>
+   <info>w;a</info>
+   <level>Standard</level>
+   <menu>Output Options</menu>
+  </mod>
+  <graph>
+   <description>Show Graphical Distribution</description>
+   <type>combo</type>
+   <value>ON</value>
+   <default>ON</default>
+   <optional>yes</optional>
+   <active>no</active>
+   <info>ON;OFF</info>
+   <level>Expert</level>
+   <menu>Output Options</menu>
+  </graph>
+  <distr>
+   <description>Show Original Distribution</description>
+   <type>combo</type>
+   <value>ON</value>
+   <default>ON</default>
+   <optional>yes</optional>
+   <active>no</active>
+   <info>ON;OFF</info>
+   <level>Expert</level>
+   <menu>Output Options</menu>
+  </distr>
+  <sort>
+   <description>Sort EigVal and EigVec</description>
+   <type>combo</type>
+   <value>ON</value>
+   <default>OFF</default>
+   <optional>yes</optional>
+   <active>yes</active>
+   <info>ON;OFF</info>
+   <level>Expert</level>
+   <menu>Output Options</menu>
+  </sort>
+  <fout>
+   <description>Fabric Output</description>
+   <type>fileEntryOut</type>
+   <value>fab.txt</value>
+   <default>fab.txt</default>
+   <optional>yes</optional>
+   <active>no</active>
+   <info>txt;dat</info>
+   <level>Expert</level>
+   <menu>Output Options</menu>
+  </fout>
+ </_Fabric>
 </MedToolXML>

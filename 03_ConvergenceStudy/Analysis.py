@@ -13,19 +13,20 @@ __version__ = '1.0'
 
 #%% Imports
 
+import pickle
 import argparse
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from scipy.stats import t
 import matplotlib.pyplot as plt
-from scipy.stats import ttest_rel, ttest_ind
-from scipy.stats.distributions import norm, t
+from matplotlib.cm import winter
+from scipy.optimize import curve_fit
+from scipy.stats.distributions import t
 
-np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
+np.set_printoptions(formatter={'float': '{: 0.1f}'.format})
 
 #%% Functions
-
 
 def GetFabric(FileName):
 
@@ -387,120 +388,35 @@ def Mandel2EngineeringNotation(A):
 
     return B
 
-def OLS(X, Y, Alpha=0.95):
-
-    # Solve linear system
-    XTXi = np.linalg.inv(X.T * X)
-    B = XTXi * X.T * Y
-
-    # Compute residuals, variance, and covariance matrix
-    Y_Obs = np.exp(Y)
-    Y_Fit = np.exp(X * B)
-    Residuals = Y - X*B
-    DOFs = len(Y) - X.shape[1]
-    Sigma = Residuals.T * Residuals / DOFs
-    Cov = Sigma[0,0] * XTXi
-
-    # Compute B confidence interval
-    t_Alpha = t.interval(Alpha, DOFs)
-    B_CI_Low = B.T + t_Alpha[0] * np.sqrt(np.diag(Cov))
-    B_CI_Top = B.T + t_Alpha[1] * np.sqrt(np.diag(Cov))
-
-    # Store parameters in data frame
-    Parameters = pd.DataFrame(columns=['Lambda0','Lambda0p','Mu0','k','l'])
-    Parameters.loc['Value'] = [np.exp(B[0,0]) - 2*np.exp(B[2,0]), np.exp(B[1,0]), np.exp(B[2,0]), B[3,0], B[4,0]]
-    Parameters.loc['95% CI Low'] = [np.exp(B_CI_Low[0,0]) - 2*np.exp(B_CI_Top[0,2]), np.exp(B_CI_Low[0,1]), np.exp(B_CI_Low[0,2]), B_CI_Low[0,3], B_CI_Low[0,4]]
-    Parameters.loc['95% CI Top'] = [np.exp(B_CI_Top[0,0]) - 2*np.exp(B_CI_Low[0,2]), np.exp(B_CI_Top[0,1]), np.exp(B_CI_Top[0,2]), B_CI_Top[0,3], B_CI_Top[0,4]]
-
-    # Compute R2 and standard error of the estimate
-    RSS = np.sum([R**2 for R in Residuals])
-    SE = np.sqrt(RSS / DOFs)
-    TSS = np.sum([R**2 for R in (Y - Y.mean())])
-    RegSS = TSS - RSS
-    R2 = RegSS / TSS
-
-    # Compute R2adj and NE
-    R2adj = 1 - RSS/TSS * (len(Y)-1)/(len(Y)-X.shape[1]-1)
-
-    NE = []
-    for i in range(0,len(Y),12):
-        T_Obs = Y_Obs[i:i+12]
-        T_Fit = Y_Fit[i:i+12]
-        Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
-        Denominator = np.sum([T**2 for T in T_Obs])
-        NE.append(np.sqrt(Numerator/Denominator))
-    NE = np.array(NE)
-
-
-    # Prepare data for plot
-    Line = np.linspace(min(Y.min(), (X*B).min()),
-                       max(Y.max(), (X*B).max()), len(Y))
-    # B_0 = np.sort(np.sqrt(np.diag(X * Cov * X.T)))
-    # CI_Line_u = np.exp(Line + t_Alpha[0] * B_0)
-    # CI_Line_o = np.exp(Line + t_Alpha[1] * B_0)
-
-    # Plots
-    DPI = 500
-    SMax = max([Y_Obs.max(), Y_Fit.max()]) * 5
-    SMin = min([Y_Obs.min(), Y_Fit.min()]) / 5
-    Colors=[(0,0,1),(0,1,0),(1,0,0)]
-
-    # Set boundaries of fabtib
-    # SMax = 1e4
-    # SMin = 1e-3
-
-    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
-    # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
-    Axes.plot(Y_Obs[X[:, 0] == 1], Y_Fit[X[:, 0] == 1],
-              color=Colors[0], linestyle='none', marker='s')
-    Axes.plot(Y_Obs[X[:, 1] == 1], Y_Fit[X[:, 1] == 1],
-              color=Colors[1], linestyle='none', marker='o')
-    Axes.plot(Y_Obs[X[:, 2] == 1], Y_Fit[X[:, 2] == 1],
-              color=Colors[2], linestyle='none', marker='^')
-    Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
-    Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
-    Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
-    Axes.plot(np.exp(Line), np.exp(Line), color=(0, 0, 0), linestyle='--')
-    Axes.annotate(r'N ROIs   : ' + str(len(Y)//12), xy=(0.3, 0.1), xycoords='axes fraction')
-    Axes.annotate(r'N Points : ' + str(len(Y)), xy=(0.3, 0.025), xycoords='axes fraction')
-    Axes.annotate(r'$R^2_{ajd}$: ' + format(round(R2adj, 3),'.3f'), xy=(0.65, 0.1), xycoords='axes fraction')
-    Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
-    Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
-    Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
-    Axes.set_xlim([SMin, SMax])
-    Axes.set_ylim([SMin, SMax])
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.legend(loc='upper left')
-    plt.subplots_adjust(left=0.15, bottom=0.15)
-    plt.show()
-
-    return Parameters, R2adj, NE
+def Function(x, a, b, c):
+    return a * np.exp(-b * x) + c
 
 #%% Main
 
 def Main():
 
     ResultsPath =Path(__file__).parent / 'Results'
-    ROIs = sorted([F.name[:-4] for F in ResultsPath.iterdir()])
+    ROIs = sorted([F.name[:-4] for F in ResultsPath.iterdir() if F.name.endswith('.fab')])
 
     Strain = np.array([0.001, 0.001, 0.001, 0.002, 0.002, 0.002])
-    S1 = np.empty((1,6,6))
-    S2 = np.empty((2,6,6))
-    S3 = np.empty((3,6,6))
-    S4 = np.empty((4,6,6))
-    S5 = np.empty((5,6,6))
-    S6 = np.empty((6,6,6))
-    S7 = np.empty((7,6,6))
-    S8 = np.empty((8,6,6))
-    S9 = np.empty((9,6,6))
-    S10 = np.empty((10,6,6))
-    S = [S1, S2, S3, S4, S5, S6, S7, S8, S9, S10]
-    Ref = np.empty((6,6))
-    for ROI in ROIs:
+    S = np.zeros((len(ROIs),6,6))
+    eValues = np.zeros((len(ROIs),3))
+    eVectors = np.zeros((len(ROIs),3,3))
+    BVTV = np.zeros(len(ROIs))
+
+    for r, ROI in enumerate(ROIs):
+
+        # Get fabric info
+        Fabric = GetFabric(ResultsPath / (ROI + '.fab'))
+        eValues[r] = Fabric[0][::-1]
+        eVectors[r] = Fabric[1][::-1]
+        BVTV[r] = Fabric[2]
 
         # Get homogenization stress results
-        Abaqus = open(ResultsPath / (ROI + '.out'), 'r').readlines()
+        try:
+            Abaqus = open(ResultsPath / (ROI + '.out'), 'r').readlines()
+        except:
+            continue
         Stress = np.zeros((6,6))
         for i in range(6):
             for j in range(6):
@@ -512,38 +428,106 @@ def Main():
             for j in range(6):
                 Stiffness[i,j] = Stress[i,j] / Strain[i]
 
-        # Store stiffness results
-        SamplingNumber = int(ROI.split('_')[1][1:]) - 1
-        ROINumber = int(ROI.split('_')[2][1:]) - 1
-        S[SamplingNumber][ROINumber] = Stiffness
-        Ref += Stiffness
+        # Symetrize matrix
+        Stiffness = 1/2 * (Stiffness + Stiffness.T)
 
-    Ref = Ref / len(ROIs)
-    S8[5:] = 0
-    S9[:] = 0
+        # Transform stiffness to fabric coordinate system
+        Mandel = Engineering2MandelNotation(Stiffness)
+        FStiffness = TransformTensor(Mandel, np.eye(3), eVectors[r])
+        Stiffness = Mandel2EngineeringNotation(FStiffness)
+
+        # Project onto orthotropy
+        for i in range(6):
+            for j in range(6):
+                if i >= 3 or j >= 3:
+                    if i != j:
+                        Stiffness[i,j] = 0
+
+        # Store stiffness results
+        S[r] = Stiffness
+
+    # Get average stiffness tensor
+    Ref = S.sum(axis=0) / sum(S[:,0,0] > 0)
+
+    # Load map
+    with open(Path(__file__).parent / 'ROIMap', 'rb') as F:
+        ROIMap = pickle.load(F)
+
+    # Compute norm errors
+    Errors = []
+    Denominator = np.sum(Ref**2)
+    for Stiffness in S:
+        Nominator = np.sum((Stiffness - Ref)**2)
+        Errors.append(np.sqrt(Nominator/Denominator))
+
+    # Plot norm errors
+    Figure, Axis = plt.subplots(1,1)
+    Mean = []
+    for i, ROI in enumerate(ROIMap):
+        Axis.plot(np.zeros(len(ROI))+i+1, [Errors[r-1] for r in ROI], color=(0,0,1), linestyle='none',
+                           marker='o', fillstyle='none')
+        Mean.append(np.mean([Errors[r-1] for r in ROI]))
+    Axis.plot(np.arange(16)+1, Mean, color=(0,0,1))
+    Axis.set_ylabel('Norm error (-)')
+    Axis.set_xlabel('Number of ROIs (-)')
+    plt.show(Figure)
 
     # Analyse stiffness
-    Figure, Axis = plt.subplots(3,3, sharex=True, sharey=True, dpi=200, figsize=(9,7))
     Indices = [[[0,0],[1,1],[2,2]], [[0,1],[0,2],[1,2]], [[3,3],[4,4],[5,5]]]
     Labels = [['$S_{11}$','$S_{22}$','$S_{33}$'], ['$S_{12}$','$S_{13}$','$S_{23}$'], ['$S_{44}$','$S_{55}$','$S_{66}$']]
-    
+
+    Figure, Axis = plt.subplots(3,3, sharex=True, sharey=True, dpi=200, figsize=(9,7))
     for i in range(3):
         for j in range(3):
             I, J = Indices[i][j]
-            for Sampling in range(10):
-                XPos = np.repeat([Sampling+1], Sampling+1)
-                Axis[i,j].plot(XPos, S[Sampling][:,I,J] / Ref[I,J], color=(0,0,1),
+            for iROI, ROI in enumerate(ROIMap):
+                for r in ROI:
+                    Axis[i,j].plot(iROI+1, S[r-1][I,J] / Ref[I,J], color=(0,0,1),
                         linestyle='none', marker='o', fillstyle='none')
-            Means = np.array([np.mean(s[:,I,J] / Ref[I,J]) for s in S])
-            Stds = np.array([np.std(s[:,I,J] / Ref[I,J]) for s in S])
-            Axis[i,j].plot(np.arange(10)+1, Means, color=(0,0,1))
-            Axis[i,j].fill_between(np.arange(10)+1, Means+Stds, Means-Stds, color=(0,0,1,0.2))
+            
+            Means, Stds = np.zeros(16), np.zeros(16)
+            for iROI, ROI in enumerate(ROIMap):
+                Means[iROI] = np.mean([S[r-1][I,J] / Ref[I,J] for r in ROI])
+                Stds[iROI] = np.std([S[r-1][I,J] / Ref[I,J] for r in ROI])
+
+            Axis[i,j].plot(np.arange(16)+1, Means, color=(0,0,1))
+            Axis[i,j].fill_between(np.arange(16)+1, Means+Stds, Means-Stds, color=(0,0,1,0.2))
             Axis[i,j].plot([], color=(0,0,1), linestyle='none',
                            marker='o', fillstyle='none', label=Labels[i][j])
             Axis[i,j].legend(loc='upper left')
-    Axis[0,0].set_ylim([0,2])
+    # Axis[0,0].set_ylim([0.5,1.5])
     Axis[1,0].set_ylabel('Ratio over mean (-)')
     Axis[2,1].set_xlabel('Number of ROIs (-)')
+    Axis[2,1].set_xticks(np.arange(2,16,2))
+    plt.show(Figure)
+
+    AbsErrors = []
+    Figure, Axis = plt.subplots(1,1)
+    for i in range(3):
+        for j in range(3):
+            I, J = Indices[i][j]
+            Color = winter((i+3*j)/8)
+            MeanErrors = np.zeros(16)
+            for iROI, ROI in enumerate(ROIMap):
+                Error = [abs(1-S[r-1,I,J] / Ref[I,J]) for r in ROI]
+                MeanErrors[iROI] = np.mean(Error)
+            AbsError = np.abs(1-MeanErrors)
+            AbsErrors.append(AbsError)
+            Axis.plot(np.arange(16)+1, AbsError, color=Color, label=Labels[i][j])
+    
+    # Combine all data for a single fit
+    X = np.tile(np.arange(16)+1, len(AbsErrors))  # Repeat x for each row
+    Y = np.array(AbsErrors).flatten()  # Flatten the 2D array into a single 1D array
+
+    # Fit the combined data
+    Guess = [1, 1, 0]
+    Params, _ = curve_fit(Function, X, Y, p0=Guess)
+
+    Axis.plot(np.arange(16)+1, Function(np.arange(16)+1, *Params), label='Fit', color=(1,0,0), linewidth=2)
+    Axis.legend(loc='right', bbox_to_anchor=(1.2,0.5))
+    Axis.set_ylim([-0.01,1])
+    Axis.set_ylabel('Ratio over mean (-)')
+    Axis.set_xlabel('Number of ROIs (-)')
     plt.show(Figure)
 
 

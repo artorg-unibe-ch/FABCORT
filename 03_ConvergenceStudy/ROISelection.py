@@ -13,6 +13,7 @@ __version__ = '1.0'
 
 #%% Imports
 
+import pickle
 import argparse
 import numpy as np
 from pathlib import Path
@@ -251,10 +252,10 @@ def PlotROIs(Shape, Boundaries, ROIs, ROISize):
         # ax.legend()
 
     plt.tight_layout()
-    plt.savefig(str(Path(__file__).parent / 'ROIs' / f'ROI_S{len(ROIs)}.png'))
+    plt.savefig(str(Path(__file__).parent / 'ROIs' / f'N{len(ROIs)}.png'))
     plt.close(fig)
 
-def ROISelection(Shape, NROIs, ROISize):
+def ROISelectionFibonacci(Shape, NROIs, ROISize):
     """
     Generate a specified number of Regions of Interest (ROIs) within a 3D space, ensuring uniform distribution 
     using Fibonacci sphere sampling and adapting the ROIs to the given constraints.
@@ -310,6 +311,246 @@ def ROISelection(Shape, NROIs, ROISize):
 
     PlotROIs(Shape, Boundaries, ROIs, ROISize)
     
+    return ROIs
+
+def ROISelection(Shape, NROIs, ROISize):
+
+    # Set limits
+    Xmin, Xmax = ROISize/4*3, Shape[0]-ROISize/4*3
+    Ymin, Ymax = ROISize/4*3, Shape[1]-ROISize/4*3
+    Zmin, Zmax = ROISize/4*3, Shape[2]-ROISize/4*3
+
+    if NROIs == 1:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 3)[1:-1]
+        YPos = np.linspace(Ymin, Ymax, 3)[1:-1]
+        XPos = np.linspace(Xmin, Xmax, 3)[1:-1]
+
+    elif NROIs == 2:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 5)[1:-1:2]
+        YPos = np.linspace(Ymin, Ymax, 3)[1:-1]
+        XPos = np.linspace(Xmin, Xmax, 3)[1:-1]
+
+        # Reshape and concatenate
+        YPos = np.repeat(YPos, 2)
+        XPos = np.repeat(XPos, 2)
+
+    elif NROIs == 3:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 3)
+        YPos = np.linspace(Ymin, Ymax, 3)[1:-1]
+        XPos = np.linspace(Xmin, Xmax, 3)[1:-1]
+
+        # Reshape and concatenate
+        YPos = np.repeat(YPos, 3)
+        XPos = np.repeat(XPos, 3)
+
+    elif NROIs == 4:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 5)[1:-1:2]
+        YPos = np.linspace(Ymin, Ymax, 2)
+        XPos = np.linspace(Xmin, Xmax, 2)
+
+        # Repeat to create grid
+        ZPos = np.repeat(ZPos, 2)
+        YPos = np.tile(YPos, 2)
+        XPos = np.concatenate([XPos, XPos[::-1]])
+
+    elif NROIs == 5:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 3)
+        YPos = np.linspace(Ymin, Ymax, 3)
+        XPos = np.linspace(Xmin, Xmax, 3)
+
+        # Repeat to create grid
+        ZPos = np.array([ZPos[0], ZPos[0], ZPos[1], ZPos[2], ZPos[2]])
+        YPos = np.array([YPos[0], YPos[2], YPos[1], YPos[0], YPos[2]])
+        XPos = np.array([XPos[0], XPos[2], XPos[1], XPos[2], XPos[0]])
+
+    elif NROIs == 6:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 3)
+        YPos = np.linspace(Ymin, Ymax, 2)
+        XPos = np.linspace(Xmin, Xmax, 3)[1:-1]
+
+        # Repeat to create grid
+        ZPos = np.repeat(ZPos, 2)
+        YPos = np.tile(YPos,3)
+        XPos = np.tile(XPos,6)
+
+    elif NROIs == 7:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 5)
+        YPos = np.linspace(Ymin, Ymax, 3)
+        XPos = np.linspace(Xmin, Xmax, 3)
+
+        # Repeat to create grid
+        ZPos = np.array([ZPos[0], ZPos[0], ZPos[4], ZPos[4], ZPos[1], ZPos[2], ZPos[3]])
+        YPos = np.array([YPos[0], YPos[2], YPos[0], YPos[2], YPos[1], YPos[1], YPos[1]])
+        XPos = np.array([XPos[0], XPos[2], XPos[2], XPos[0], XPos[1], XPos[1], XPos[1]])
+
+    elif NROIs == 8:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 5)[1:-1:2]
+        YPos = np.linspace(Ymin, Ymax, 2)
+        XPos = np.linspace(Xmin, Xmax, 2)
+
+        # Repeat to create grid
+        ZPos = np.repeat(ZPos, 4)
+        YPos = np.repeat(np.tile(YPos,2),2)
+        XPos = np.tile(XPos,4)
+
+    elif NROIs == 9:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 3)
+        YPos = np.linspace(Ymin, Ymax, 3)
+        XPos = np.linspace(Xmin, Xmax, 3)
+
+        # Repeat to create grid
+        ZPos = np.array([ZPos[0], ZPos[0], ZPos[0],
+                         ZPos[0], ZPos[1], ZPos[2],
+                         ZPos[2], ZPos[2], ZPos[2]])
+        YPos = np.array([YPos[0], YPos[0], YPos[2],
+                         YPos[2], YPos[1], YPos[0],
+                         YPos[0], YPos[2], YPos[2]])
+        XPos = np.array([XPos[0], XPos[2], XPos[0],
+                         XPos[2], XPos[1], XPos[0],
+                         XPos[2], XPos[0], XPos[2]])
+
+    elif NROIs == 10:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 4)
+        YPos = np.linspace(Ymin, Ymax, 3)
+        XPos = np.linspace(Xmin, Xmax, 3)
+
+        # Repeat to create grid
+        ZPos = np.array([ZPos[0], ZPos[0], ZPos[0],
+                         ZPos[0], ZPos[1], ZPos[2], ZPos[3],
+                         ZPos[3], ZPos[3], ZPos[3]])
+        YPos = np.array([YPos[0], YPos[0], YPos[2],
+                         YPos[2], YPos[1], YPos[1], YPos[0],
+                         YPos[0], YPos[2], YPos[2]])
+        XPos = np.array([XPos[0], XPos[2], XPos[0],
+                         XPos[2], XPos[1], XPos[1], XPos[0],
+                         XPos[2], XPos[0], XPos[2]])
+
+    elif NROIs == 11:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 5)
+        YPos = np.linspace(Ymin, Ymax, 3)
+        XPos = np.linspace(Xmin, Xmax, 3)
+
+        # Repeat to create grid
+        ZPos = np.array([ZPos[0], ZPos[0], ZPos[0], ZPos[0],
+                         ZPos[1], ZPos[2], ZPos[3],
+                         ZPos[4], ZPos[4], ZPos[4], ZPos[4]])
+        YPos = np.array([YPos[0], YPos[0], YPos[2], YPos[2],
+                         YPos[1], YPos[1], YPos[1],
+                         YPos[0], YPos[0], YPos[2], YPos[2]])
+        XPos = np.array([XPos[0], XPos[2], XPos[0], XPos[2],
+                         XPos[1], XPos[1], XPos[1],
+                         XPos[0], XPos[2], XPos[0], XPos[2]])
+
+    elif NROIs == 12:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 3)
+        YPos = np.linspace(Ymin, Ymax, 2)
+        XPos = np.linspace(Xmin, Xmax, 2)
+
+        # Repeat to create grid
+        ZPos = np.repeat(ZPos, 4)
+        YPos = np.repeat(np.tile(YPos,3),2)
+        XPos = np.tile(XPos,6)
+
+    elif NROIs == 13:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 3)
+        YPos = np.linspace(Ymin, Ymax, 3)
+        XPos = np.linspace(Xmin, Xmax, 3)
+
+        # Repeat to create grid
+        ZPos = np.array([ZPos[0], ZPos[0], ZPos[0], ZPos[0],
+                         ZPos[1], ZPos[1], ZPos[1], ZPos[1], ZPos[1],
+                         ZPos[2], ZPos[2], ZPos[2], ZPos[2]])
+        YPos = np.array([YPos[0], YPos[0], YPos[2], YPos[2],
+                         YPos[0], YPos[0], YPos[2], YPos[2], YPos[1],
+                         YPos[0], YPos[0], YPos[2], YPos[2]])
+        XPos = np.array([XPos[0], XPos[2], XPos[0], XPos[2],
+                         XPos[0], XPos[2], XPos[0], XPos[2], XPos[1],
+                         XPos[0], XPos[2], XPos[0], XPos[2]])
+
+    elif NROIs == 14:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 5)
+        YPos = np.linspace(Ymin, Ymax, 3)
+        XPos = np.linspace(Xmin, Xmax, 3)
+
+        # Repeat to create grid
+        ZPos = np.array([ZPos[0], ZPos[0], ZPos[0], ZPos[0],
+                         ZPos[1],
+                         ZPos[2], ZPos[2], ZPos[2], ZPos[2],
+                         ZPos[3],
+                         ZPos[4], ZPos[4], ZPos[4], ZPos[4]])
+        YPos = np.array([YPos[0], YPos[0], YPos[2], YPos[2],
+                         YPos[1],
+                         YPos[0], YPos[0], YPos[2], YPos[2],
+                         YPos[1],
+                         YPos[0], YPos[0], YPos[2], YPos[2]])
+        XPos = np.array([XPos[0], XPos[2], XPos[0], XPos[2],
+                         XPos[1],
+                         XPos[0], XPos[2], XPos[0], XPos[2],
+                         XPos[1],
+                         XPos[0], XPos[2], XPos[0], XPos[2]])
+
+    elif NROIs == 15:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 5)
+        YPos = np.linspace(Ymin, Ymax, 3)
+        XPos = np.linspace(Xmin, Xmax, 3)
+
+        # Repeat to create grid
+        ZPos = np.array([ZPos[0], ZPos[0], ZPos[0], ZPos[0],
+                         ZPos[1],
+                         ZPos[2], ZPos[2], ZPos[2], ZPos[2], ZPos[2],
+                         ZPos[3],
+                         ZPos[4], ZPos[4], ZPos[4], ZPos[4]])
+        YPos = np.array([YPos[0], YPos[0], YPos[2], YPos[2],
+                         YPos[1],
+                         YPos[1], YPos[0], YPos[0], YPos[2], YPos[2],
+                         YPos[1],
+                         YPos[0], YPos[0], YPos[2], YPos[2]])
+        XPos = np.array([XPos[0], XPos[2], XPos[0], XPos[2],
+                         XPos[1],
+                         XPos[1], XPos[0], XPos[2], XPos[0], XPos[2],
+                         XPos[1],
+                         XPos[0], XPos[2], XPos[0], XPos[2]])
+
+    elif NROIs == 16:
+        # Compute positions
+        ZPos = np.linspace(Zmin, Zmax, 4)
+        YPos = np.linspace(Ymin, Ymax, 2)
+        XPos = np.linspace(Xmin, Xmax, 2)
+
+        # Repeat to create grid
+        ZPos = np.repeat(ZPos, 4)
+        YPos = np.repeat(np.tile(YPos,4),2)
+        XPos = np.tile(XPos,8)
+
+    # Reshape and concatenate
+    ROIs = np.vstack([XPos, YPos, ZPos]).T
+
+    Boundaries = np.array([[ Xmin, Ymin, Zmin],
+                           [ Xmax, Ymin, Zmin],
+                           [ Xmin, Ymax, Zmin],
+                           [ Xmin, Ymin, Zmax],
+                           [ Xmax, Ymax, Zmin],
+                           [ Xmax, Ymin, Zmax],
+                           [ Xmin, Ymax, Zmax],
+                           [ Xmax, Ymax, Zmax]])
+        
+    PlotROIs(Shape, Boundaries, ROIs, ROISize)
+
     return ROIs
 
 def Resample(Image, Factor=None, Size=[None], Spacing=[None], Order=1):
@@ -371,24 +612,46 @@ def Main():
     # Select ROIs
     Shape = Scan.GetSize()
     Size = 1/0.0065
-    Text = '$Sampling,$ROI,\n'
-    for NROIs in range(1,11):
+    Text = '$ROI,\n'
+    ROICoords = []
+    ROINumbers = []
+    for NROIs in range(1,17):
+
+        # Select ROIs positions
         Coords = ROISelection(Shape, NROIs, Size)
 
-        # Resample ROI resolutions
-        for i, Coord in enumerate(Coords):
-            X1, X2 = int(Coord[0] - Size // 2), int(Coord[0] + Size // 2)
-            Y1, Y2 = int(Coord[1] - Size // 2), int(Coord[1] + Size // 2)
-            Z1, Z2 = int(Coord[2] - Size // 2), int(Coord[2] + Size // 2)
-            ROI = Scan[X1:X2,Y1:Y2,Z1:Z2]
-            Resampled = Resample(ROI, Factor=2)
-            Resampled.SetOrigin((0,0,0))
-            sitk.WriteImage(Resampled,str(Path(__file__).parent / 'ROIs' / f'ROI_S{NROIs}_N{i+1}.mhd'))
-            Text += f'{NROIs},{i+1},\n'
+        # Iterate over every positions
+        ROINumber = []
+        for Coord in Coords:
+            
+            # If already in list, skip
+            if any([(Coord == C).all() for C in ROICoords]):
+                for i, C in enumerate(ROICoords):
+                    if (Coord == C).all():
+                        ROINumber.append(i)
+                continue
 
-    # Write parameter file
-    with open('Parameters.csv','w') as F:
-        F.write(Text)
+            # If not, store coords, resample and write ROI
+            else:
+                ROICoords.append(Coord)
+                ROINumber.append(len(ROICoords))
+                # X1, X2 = int(Coord[0] - Size // 2), int(Coord[0] + Size // 2)
+                # Y1, Y2 = int(Coord[1] - Size // 2), int(Coord[1] + Size // 2)
+                # Z1, Z2 = int(Coord[2] - Size // 2), int(Coord[2] + Size // 2)
+                # ROI = Scan[X1:X2,Y1:Y2,Z1:Z2]
+                # Resampled = Resample(ROI, Factor=2)
+                # Resampled.SetOrigin((0,0,0))
+                # sitk.WriteImage(Resampled,str(Path(__file__).parent / 'ROIs' / f'ROI_{len(ROICoords):03d}.mhd'))
+                # Text += f'{len(ROICoords):03d},\n'
+        ROINumbers.append(ROINumber)
+
+    # # Write parameter file
+    # with open(Path(__file__).parent / 'Parameters.csv','w') as F:
+    #     F.write(Text)
+
+    # Save map
+    with open(Path(__file__).parent / 'ROIMap.', 'wb') as F:
+        pickle.dump(ROINumbers, F)
 
 if __name__ == '__main__':
     # Initiate the parser with a description

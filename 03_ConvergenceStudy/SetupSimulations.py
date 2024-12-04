@@ -271,7 +271,7 @@ def Main():
     with open(Path(__file__).parent / 'RunAbaqus.bash','a') as File:
         File.write('# Bash script to run abaqus simulations and get homogenized stress\n')
     
-    for Input in AbaqusInps:
+    for Input in AbaqusInps[16:]:
 
         # If temporary file, remove it
         TempFile = str(Input)[:-4] + '_temp.inp'
