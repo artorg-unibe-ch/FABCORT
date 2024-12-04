@@ -26,7 +26,6 @@ np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
 #%% Functions
 
-
 def GetFabric(FileName):
 
     Text = open(FileName,'r').readlines()
@@ -621,6 +620,24 @@ def Main():
     for Test, Ref in zip([S14,S24,S34], [S11,S21,S31]):
         NE4.append(np.sqrt(np.sum((Test - Ref)**2) / np.sum(Ref**2)))
     print(f'Norm error with 4 factor: {round(np.mean(NE4),3)}')
+
+    Indices = [[[0,0],[1,1],[2,2]], [[0,1],[0,2],[1,2]], [[3,3],[4,4],[5,5]]]
+    Labels = [['$S_{11}$','$S_{22}$','$S_{33}$'], ['$S_{12}$','$S_{13}$','$S_{23}$'], ['$S_{44}$','$S_{55}$','$S_{66}$']]
+
+    Figure, Axis = plt.subplots(3,3,dpi=200, figsize=(12,9), sharex=True)
+    for i in range(3):
+        for j in range(3):
+            I, J = Indices[i][j]
+            Axis[i,j].plot(np.zeros(3)+1, [S[I,J] for S in [S11,S21,S31]], linestyle='none',
+                    marker='o', fillstyle='none', color=(0,0,1), label=Labels[i][j])
+            Axis[i,j].plot(np.zeros(3)+2, [S[I,J] for S in [S12,S22,S32]], linestyle='none',
+                    marker='o', fillstyle='none', color=(0,0,1), label=Labels[i][j])
+            Axis[i,j].plot(np.zeros(3)+4, [S[I,J] for S in [S14,S24,S34]], linestyle='none',
+                    marker='o', fillstyle='none', color=(0,0,1), label=Labels[i][j])
+    Axis[2,1].set_xticks([1,2,4])
+    Axis[2,1].set_xlabel('Downscale factor (-)')
+    Axis[1,0].set_ylabel('Constant value (MPa)')
+    plt.show(Figure)
 
 if __name__ == '__main__':
     # Initiate the parser with a description
