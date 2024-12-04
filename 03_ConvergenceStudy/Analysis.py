@@ -447,7 +447,7 @@ def Main():
         S[r] = Stiffness
 
     # Get average stiffness tensor
-    Ref = S.sum(axis=0) / sum(S[:,0,0] > 0)
+    Ref = S.mean(axis=0)
 
     # Load map
     with open(Path(__file__).parent / 'ROIMap', 'rb') as F:
@@ -525,10 +525,38 @@ def Main():
 
     Axis.plot(np.arange(16)+1, Function(np.arange(16)+1, *Params), label='Fit', color=(1,0,0), linewidth=2)
     Axis.legend(loc='right', bbox_to_anchor=(1.2,0.5))
-    Axis.set_ylim([-0.01,1])
+    # Axis.set_ylim([-0.01,1])
     Axis.set_ylabel('Ratio over mean (-)')
     Axis.set_xlabel('Number of ROIs (-)')
     plt.show(Figure)
+
+    # Read original fabric
+    DataPath = Path(__file__).parents[1] / '01_Fabric/Results'
+    Files = [F for F in DataPath.iterdir()]
+    BVTVs = []
+    for F in Files:
+        _, _, BVTV = GetFabric(F)
+        BVTVs.append(BVTV)
+    FabricFile = Files[BVTVs.index(min(BVTVs))].name[:-4]
+    Fabric = GetFabric(DataPath / (FabricFile + '.fab'))
+
+    Figure, Axis = plt.subplots(1,1)
+    Mean1, Mean2, Mean3 = [], [], []
+    for r, ROI in enumerate(ROIMap):
+        X = np.ones(len(ROI)) + r
+        Y = np.array([eValues[R-1][2] / Fabric[0][0] for R in ROI])
+        Mean1.append(np.mean(Y))
+        Axis.plot(X, Y, linestyle='none', marker='o', fillstyle='none', color=(0,0,1))
+        Y = np.array([eValues[R-1][1] / Fabric[0][1] for R in ROI])
+        Mean2.append(np.mean(Y))
+        Axis.plot(X, Y, linestyle='none', marker='o', fillstyle='none', color=(1,0,1))
+        Y = np.array([eValues[R-1][0] / Fabric[0][2] for R in ROI])
+        Mean3.append(np.mean(Y))
+        Axis.plot(X, Y, linestyle='none', marker='o', fillstyle='none', color=(1,0,0))
+    for Mean, C, L in zip([Mean1, Mean2, Mean3], [(0,0,1), (1,0,1), (1,0,0)], ['m$_1$', 'm$_2$', 'm$_3$']):
+        Axis.plot(np.arange(1,17), Mean, color=C, label=L)
+    plt.legend(ncol=3, loc='upper center', bbox_to_anchor=(0.5, 1.1))
+    plt.show()
 
 
 if __name__ == '__main__':
