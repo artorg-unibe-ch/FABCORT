@@ -617,25 +617,31 @@ def Main():
     # Select ROIs
     Time.Update(1/2, 'Select ROIs')
     Text = '$ROI,\n'
+    ROIMap = []
     for x, X, in enumerate(XPos):
         for y, Y in enumerate(YPos):
             for z, Z in enumerate(ZPos):
-                X1, X2 = int(X - HalfSize), int(X + HalfSize)
-                Y1, Y2 = int(Y - HalfSize), int(Y + HalfSize)
-                Z1, Z2 = int(Z - HalfSize), int(Z + HalfSize)
-                ROI = Scan[X1:X2,Y1:Y2,Z1:Z2]
+                # X1, X2 = int(X - HalfSize), int(X + HalfSize)
+                # Y1, Y2 = int(Y - HalfSize), int(Y + HalfSize)
+                # Z1, Z2 = int(Z - HalfSize), int(Z + HalfSize)
+                # ROI = Scan[X1:X2,Y1:Y2,Z1:Z2]
                 
-                # Resample ROI and write it
-                Resampled = Image.Resample(ROI, Factor=2)
-                Resampled[0,0,0] = 255
+                # # Resample ROI and write it
+                # Resampled = Image.Resample(ROI, Factor=2)
+                # Resampled[0,0,0] = 255
 
-                # Resampled.SetOrigin((0,0,0))
-                sitk.WriteImage(Resampled,str(Path(__file__).parent / 'ROIs' / f'ROI_{x+1}{y+1}{z+1}.mhd'))
-                Text += f'{x+1}{y+1}{z+1},\n'
+                # # Resampled.SetOrigin((0,0,0))
+                # sitk.WriteImage(Resampled,str(Path(__file__).parent / 'ROIs' / f'ROI_{x+1}{y+1}{z+1}.mhd'))
+                # Text += f'{x+1}{y+1}{z+1},\n'
 
-    # Write parameter file
-    with open(Path(__file__).parent / 'Parameters.csv','w') as F:
-        F.write(Text)
+                # Store ROI position
+                ROIMap.append((X,Y,Z))
+
+    np.save(Path(__file__).parent/ 'ROIMap.npy', ROIMap)
+
+    # # Write parameter file
+    # with open(Path(__file__).parent / 'Parameters.csv','w') as F:
+    #     F.write(Text)
 
     # Print elapsed time
     Time.Process(0, 'ROI selected')
