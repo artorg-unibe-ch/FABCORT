@@ -2,14 +2,14 @@
 =====================================================================
      Medical Image Analysis  by  D.H. Pahr 
 =====================================================================
- Date - Time   = 2024/11/29 - 11:41
+ Date - Time   = 2024/12/7 - 10:59
  Param: -step  =      5
  Param: -power =      2   (  128 Directions)
  Param: -ftype =      1   (Ellip..1, 2nd Order..2)
  Param: -valid =    0.0
  Filename      = ROI_1_F2.mhd
  nx,ny,nz      = [77, 77, 77]
- Threshold     = [2]
+ Threshold     = [131]
  BV/TV         = 0.6140
 
 

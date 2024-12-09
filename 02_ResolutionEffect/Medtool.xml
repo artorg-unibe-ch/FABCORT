@@ -1,6 +1,6 @@
 <!DOCTYPE MedToolXML>
-<MedToolXML writeonly="yes" level="Expert" paramfile="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT/02_ResolutionEffect/Parameters.csv" resfile="" workdir="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT" cpu="1" exefile="">
- <_Segmentation script="mic" active="yes">
+<MedToolXML paramfile="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT/02_ResolutionEffect/Parameters.csv" exefile="" resfile="" workdir="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT" cpu="1" writeonly="yes" level="Expert">
+ <_Segmentation script="mic" active="no">
   <modulName>
    <description>mic - medical image converter</description>
   </modulName>
@@ -733,7 +733,7 @@
   <thres>
    <description>Threshold by value(s) | thres1;thres2;thres3</description>
    <type>entry</type>
-   <value>131</value>
+   <value>$Threshold</value>
    <default>75</default>
    <optional>yes</optional>
    <active>yes</active>
@@ -918,7 +918,7 @@
    <menu>Image Infos</menu>
   </cog>
  </_Segmentation>
- <_Compute script="mic" active="yes">
+ <_Compute script="mic" active="no">
   <modulName>
    <description>mic - medical image converter</description>
   </modulName>
@@ -1836,7 +1836,7 @@
    <menu>Image Infos</menu>
   </cog>
  </_Compute>
- <_FE script="imgToFe" active="yes">
+ <_FE script="imgToFe" active="no">
   <modulName>
    <description>Template Script</description>
   </modulName>
@@ -1984,7 +1984,7 @@
    <menu>Result Output</menu>
   </nodedat>
  </_FE>
- <_KUBCs script="cbc" active="yes">
+ <_KUBCs script="cbc" active="no">
   <modulName>
    <description>cbc</description>
   </modulName>
@@ -2051,7 +2051,7 @@
   <in>
    <description>Input File Name</description>
    <type>fileEntryIn</type>
-   <value>02_ResolutionEffect/Abaqus/ROI_$N_F$Res.mhd</value>
+   <value>02_ResolutionEffect/ROIs/ROI_$N_F$Res.mhd</value>
    <default>test.mhd</default>
    <optional>no</optional>
    <active>yes</active>
@@ -2095,7 +2095,7 @@
   <thres>
    <description>Threshold (value)</description>
    <type>entry</type>
-   <value>2</value>
+   <value>$Threshold</value>
    <default>75</default>
    <optional>yes</optional>
    <active>yes</active>
