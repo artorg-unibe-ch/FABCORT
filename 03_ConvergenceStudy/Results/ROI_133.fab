@@ -1,0 +1,22 @@
+
+=====================================================================
+     Medical Image Analysis  by  D.H. Pahr 
+=====================================================================
+ Date - Time   = 2024/12/8 - 17:0
+ Param: -step  =      5
+ Param: -power =      2   (  128 Directions)
+ Param: -ftype =      1   (Ellip..1, 2nd Order..2)
+ Param: -valid =    0.0
+ Filename      = ROI_133.mhd
+ nx,ny,nz      = [76, 76, 76]
+ Threshold     = [2]
+ BV/TV         = 0.6215
+
+
+--------------------------------------------------------
+RESULTS: Morphological analysis normalized by : trace
+--------------------------------------------------------
+ MIL - Eigen values   :   1.35203    0.86561    0.78235
+ MIL - Eigen vector 1 :  -0.05911    0.10612    0.99259
+ MIL - Eigen vector 2 :  -0.98288   -0.18002   -0.03929
+ MIL - Eigen vector 3 :  -0.17451    0.97792   -0.11494

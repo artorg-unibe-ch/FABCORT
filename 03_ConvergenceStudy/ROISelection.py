@@ -13,6 +13,7 @@ __version__ = '1.0'
 
 #%% Imports
 
+import sys
 import pickle
 import argparse
 import numpy as np
@@ -22,21 +23,10 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Voronoi
 from matplotlib.patches import Rectangle
 
-
-np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
+sys.path.append(str(Path(__file__).parents[1]))
+from Utils import Time, Read, Image
 
 #%% Functions
-
-def GetFabric(FileName):
-
-    Text = open(FileName,'r').readlines()
-    BVTV = float(Text[12].split('=')[1])
-    eValues = np.array(Text[18].split(':')[1].split(),float)
-    eVectors = np.zeros((3,3))
-    for i in range(3):
-        eVectors[i] = Text[19+i].split(':')[1].split()
-
-    return eValues, eVectors, BVTV
 
 def HRASampling(Boundaries, NROIs, Factor=10):
     """
@@ -596,62 +586,59 @@ def Resample(Image, Factor=None, Size=[None], Spacing=[None], Order=1):
 
 def Main():
 
+    # Print time
+    Time.Process(1, 'Select scan')
+
     # List bone volume fraction of samples
     DataPath = Path(__file__).parents[1] / '01_Fabric/Results'
-    Files = [F for F in DataPath.iterdir()]
+    Files = [F for F in DataPath.iterdir() if F.name.endswith('.fab')]
     BVTVs = []
     for F in Files:
-        _, _, BVTV = GetFabric(F)
-        BVTVs.append(BVTV)
+        Fabric = Read.Fabric(F)
+        BVTVs.append(Fabric[2])
 
     # Load sample with lower BV/TV
     ScanPath = Path(__file__).parents[1] / '00_Data'
     File = Files[BVTVs.index(min(BVTVs))].name[:-4]
     Scan = sitk.ReadImage(str(ScanPath / File) + '.mhd')
 
+    # Create grid for ROI selection
+    Margin = 10
+    Shape = np.array(Scan.GetSize()) - 1
+    HalfSize = 1/0.0065//2
+    NROIs = np.ceil(Shape / HalfSize / 2).astype(int)
+    XPos = np.linspace(HalfSize+Margin, Shape[0]-HalfSize-Margin, NROIs[0])
+    YPos = np.linspace(HalfSize+Margin, Shape[1]-HalfSize-Margin, NROIs[1])
+    ZPos = np.linspace(HalfSize+Margin, Shape[2]-HalfSize-Margin, NROIs[2])
+    XPos = np.round(XPos).astype(int)
+    YPos = np.round(YPos).astype(int)
+    ZPos = np.round(ZPos).astype(int)
+
     # Select ROIs
-    Shape = Scan.GetSize()
-    Size = 1/0.0065
+    Time.Update(1/2, 'Select ROIs')
     Text = '$ROI,\n'
-    ROICoords = []
-    ROINumbers = []
-    for NROIs in range(1,17):
+    for x, X, in enumerate(XPos):
+        for y, Y in enumerate(YPos):
+            for z, Z in enumerate(ZPos):
+                X1, X2 = int(X - HalfSize), int(X + HalfSize)
+                Y1, Y2 = int(Y - HalfSize), int(Y + HalfSize)
+                Z1, Z2 = int(Z - HalfSize), int(Z + HalfSize)
+                ROI = Scan[X1:X2,Y1:Y2,Z1:Z2]
+                
+                # Resample ROI and write it
+                Resampled = Image.Resample(ROI, Factor=2)
+                Resampled[0,0,0] = 255
 
-        # Select ROIs positions
-        Coords = ROISelection(Shape, NROIs, Size)
-
-        # Iterate over every positions
-        ROINumber = []
-        for Coord in Coords:
-            
-            # If already in list, skip
-            if any([(Coord == C).all() for C in ROICoords]):
-                for i, C in enumerate(ROICoords):
-                    if (Coord == C).all():
-                        ROINumber.append(i)
-                continue
-
-            # If not, store coords, resample and write ROI
-            else:
-                ROICoords.append(Coord)
-                ROINumber.append(len(ROICoords))
-                # X1, X2 = int(Coord[0] - Size // 2), int(Coord[0] + Size // 2)
-                # Y1, Y2 = int(Coord[1] - Size // 2), int(Coord[1] + Size // 2)
-                # Z1, Z2 = int(Coord[2] - Size // 2), int(Coord[2] + Size // 2)
-                # ROI = Scan[X1:X2,Y1:Y2,Z1:Z2]
-                # Resampled = Resample(ROI, Factor=2)
                 # Resampled.SetOrigin((0,0,0))
-                # sitk.WriteImage(Resampled,str(Path(__file__).parent / 'ROIs' / f'ROI_{len(ROICoords):03d}.mhd'))
-                # Text += f'{len(ROICoords):03d},\n'
-        ROINumbers.append(ROINumber)
+                sitk.WriteImage(Resampled,str(Path(__file__).parent / 'ROIs' / f'ROI_{x+1}{y+1}{z+1}.mhd'))
+                Text += f'{x+1}{y+1}{z+1},\n'
 
-    # # Write parameter file
-    # with open(Path(__file__).parent / 'Parameters.csv','w') as F:
-    #     F.write(Text)
+    # Write parameter file
+    with open(Path(__file__).parent / 'Parameters.csv','w') as F:
+        F.write(Text)
 
-    # Save map
-    with open(Path(__file__).parent / 'ROIMap.', 'wb') as F:
-        pickle.dump(ROINumbers, F)
+    # Print elapsed time
+    Time.Process(0, 'ROI selected')
 
 if __name__ == '__main__':
     # Initiate the parser with a description

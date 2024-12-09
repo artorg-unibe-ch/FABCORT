@@ -1,6 +1,6 @@
 <!DOCTYPE MedToolXML>
-<MedToolXML exefile="" cpu="1" paramfile="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT/03_ConvergenceStudy/Parameters.csv" level="Expert" writeonly="yes" resfile="" workdir="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT">
- <_Segmentation active="yes" script="mic">
+<MedToolXML resfile="" exefile="" cpu="1" writeonly="yes" level="Expert" paramfile="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT/03_ConvergenceStudy/Parameters.csv" workdir="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT">
+ <_Segmentation script="mic" active="yes">
   <modulName>
    <description>mic - medical image converter</description>
   </modulName>
@@ -918,7 +918,7 @@
    <menu>Image Infos</menu>
   </cog>
  </_Segmentation>
- <_Compute active="yes" script="mic">
+ <_Compute script="mic" active="yes">
   <modulName>
    <description>mic - medical image converter</description>
   </modulName>
@@ -1836,7 +1836,7 @@
    <menu>Image Infos</menu>
   </cog>
  </_Compute>
- <_FE active="yes" script="imgToFe">
+ <_FE script="imgToFe" active="yes">
   <modulName>
    <description>Template Script</description>
   </modulName>
@@ -1984,7 +1984,7 @@
    <menu>Result Output</menu>
   </nodedat>
  </_FE>
- <_KUBCs active="yes" script="cbc">
+ <_KUBCs script="cbc" active="yes">
   <modulName>
    <description>cbc</description>
   </modulName>
@@ -2044,7 +2044,7 @@
    <menu>Common</menu>
   </tol>
  </_KUBCs>
- <_Fabric active="yes" script="mia">
+ <_Fabric script="mia" active="yes">
   <modulName>
    <description>MIA - Medical Image Analyzer</description>
   </modulName>
