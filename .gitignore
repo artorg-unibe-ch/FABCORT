@@ -13,3 +13,6 @@
 # Ignore reference publications
 *Cai2019.pdf
 *Fan2021.pdf
+
+# Ignore medtool bak files
+*.bak
