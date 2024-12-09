@@ -17,10 +17,12 @@ import sys
 import pickle
 import argparse
 import numpy as np
+import pyvista as pv
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.cm import winter
 from itertools import combinations
+from sklearn.cluster import KMeans
 from scipy.optimize import curve_fit
 
 sys.path.append(str(Path(__file__).parents[1]))
@@ -62,8 +64,111 @@ def Main():
     Ref = np.mean(Stiffness, axis=0)
 
     # Load map
-    with open(Path(__file__).parent / 'ROIMap', 'rb') as F:
-        ROIMap = pickle.load(F)
+    ROIMap = np.load(Path(__file__).parent / 'ROIMap.npy')
+
+    # Compute pairwise distances using broadcasting
+    Differences = ROIMap[:, np.newaxis, :] - ROIMap[np.newaxis, :, :]
+    Distances = np.sqrt(np.sum(Differences**2, axis=-1))
+
+    # Cluster grid points
+    NCluster = 4
+    kmeans = KMeans(n_clusters=NCluster, random_state=42)
+    Labels = kmeans.fit_predict(ROIMap)
+    Clusters = {i: [] for i in range(NCluster)}
+    for idx, label in enumerate(Labels):
+        Clusters[label].append(idx)
+    Centroids = kmeans.cluster_centers_
+
+    # Count points to balance clusters
+    MeanSize = len(ROIMap) // NCluster
+    Counts = np.bincount(Labels)
+
+    # Identify overfull and underfull clusters
+    oClusters = [i for i in range(NCluster) if Counts[i] > MeanSize]
+    uClusters = [i for i in range(NCluster) if Counts[i] < MeanSize]
+
+    # Compute distances between clusters
+    Differences = Centroids[:, np.newaxis, :] - Centroids[np.newaxis, :, :]
+    Distances = np.sqrt(np.sum(Differences**2, axis=-1))
+    Distances[Distances==0] = np.inf
+    MinDistances = np.min(Distances, axis=1)
+
+    # Sort overfull clusters according to their proximity to underfull clusters
+    oClusters = [oClusters[i] for i in np.argsort(MinDistances)]
+
+    # Redistribute points
+    NewLabels = Labels.copy()
+    for oCluster in [oClusters[0]]:
+
+        # Points in the overfull cluster
+        oPoints = np.where(Labels == oCluster)[0]
+        
+        # Compute distances to underfull cluster centroids
+        Differences = Centroids[uClusters][:, np.newaxis, :] - ROIMap[oPoints][np.newaxis, :, :]
+        uDistances = np.sqrt(np.sum(Differences**2, axis=-1))
+        
+        # Sort points according to their proximity to clusters
+        MinDistances = np.min(uDistances, axis=0)
+        oPoints = oPoints[np.argsort(MinDistances)]
+
+        # Sort overfull points by distance to centroids of underfull clusters
+        for Point in oPoints:
+
+            # Compute distances to underfull cluster centroids
+            uDistances = np.linalg.norm(Centroids[uClusters] - ROIMap[Point], axis=1)
+            
+            # Find the nearest underfull cluster
+            iNearests = np.argmin(uDistances)
+            Nearests = uClusters[iNearests]
+            
+            # Reassign the point to the nearest underfull cluster
+            NewLabels[Point] = Nearests
+            Counts[oCluster] -= 1
+            Counts[Nearests] += 1
+            
+            # Remove cluster from underfull list if it's now full
+            if Counts[Nearests] >= MeanSize:
+                uClusters.pop(iNearests)
+            
+            # Stop redistribution if the overfull cluster is balanced or no more underfull clusters
+            if len(uClusters) == 0 or Counts[oCluster] <= MeanSize:
+                break
+
+        # Redifine overfull and underfull clusters
+        oClusters = [i for i in range(NCluster) if Counts[i] > MeanSize]
+        uClusters = [i for i in range(NCluster) if Counts[i] < MeanSize]
+
+        # If still over and under full cluster
+        if len(oClusters) > 0 and len(uClusters) > 0:
+
+            # Compute distances between clusters
+            Differences = Centroids[oClusters][:, np.newaxis, :] - Centroids[np.newaxis, :, :]
+            Distances = np.sqrt(np.sum(Differences**2, axis=-1))
+            Distances[Distances==0] = np.inf
+            MinDistances = np.min(Distances, axis=1)
+
+            # Sort overfull clusters according to their proximity to underfull clusters
+            oClusters = [oClusters[i] for i in np.argsort(MinDistances)]
+
+        
+    colors = np.array([
+    [1.0, 0.0, 0.0],  # Red for cluster 0
+    [0.0, 1.0, 0.0],  # Blue for cluster 1
+    [0.0, 0.0, 1.0],  # Blue for cluster 2
+    [0.0, 0.0, 0.0],  # Blue for cluster 3
+    ])
+
+    # Map cluster labels to colors
+    point_colors = colors[NewLabels]
+
+    # Create a PyVista point cloud
+    point_cloud = pv.PolyData(ROIMap.astype(float))
+    point_cloud['colors'] = point_colors
+
+    # Plot the clusters
+    plotter = pv.Plotter()
+    plotter.add_mesh(point_cloud, scalars='colors', rgb=True, point_size=15)
+    plotter.show()
 
     # Compute norm errors
     Errors = []
