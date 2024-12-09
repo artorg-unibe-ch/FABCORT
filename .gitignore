@@ -9,3 +9,7 @@
 # Ignore Medtool python files
 *abqSeReader.py
 *dpUtils.py
+
+# Ignore reference publications
+*Cai2019.pdf
+*Fan2021.pdf
