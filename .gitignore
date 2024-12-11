@@ -2,9 +2,8 @@
 *.mhd
 *.raw
 
-# Ignore meshes (large files)
-*Mesh.inp
-*KUBCs.inp
+# Ignore abaqus input files
+*.inp
 
 # Ignore Medtool python files
 *abqSeReader.py
@@ -14,5 +13,7 @@
 *Cai2019.pdf
 *Fan2021.pdf
 
-# Ignore medtool bak files
+# Ignore medtool files
+*.out
+*.fab
 *.bak
