@@ -46,6 +46,7 @@
 \setbeamertemplate{frametitle}{\vspace*{1em}\insertframetitle}
 \setbeamertemplate{enumerate items}[default]
 \setbeamercolor{section in head/foot}{fg=white, bg=black}
+\setbeamercolor{normal text}{fg=white,bg=black}
 
 % Headline
 \makeatletter
@@ -221,6 +222,81 @@
 			\includegraphics[height=5cm]{02_ResolutionEffect/Results/BVTV_Stiffness}\\
 		\end{columns}
 
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Convergence Study}
+
+		\begin{columns}
+			\column{0.5\linewidth}
+			\vfill
+
+			Setup
+			\begin{itemize}
+				\item 1mm ROI side length
+				\item 3x3x5 ROIs
+				\item 65 \textmu m margin
+				\item Groups of 1, 2, ..., 45 ROIs
+			\end{itemize}
+			$\rightarrow$ \textasciitilde 2\textsuperscript{45} possibilities
+			\vfill
+
+			\column{0.4\linewidth}
+			\includegraphics[width=\linewidth, trim=200 0 0 0]{03_ConvergenceStudy/Results/ROIs}\\
+
+		\end{columns}
+
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Convergence Study}
+
+		\begin{columns}
+			\column{0.5\linewidth}
+			\vfill
+
+			Sampling
+			\begin{itemize}
+				\item Balanced clustering\\
+					  $\rightarrow$ Linear sum assignment\\
+					  $\rightarrow$ 216*10\textsuperscript{6} possibilities
+				\item N samples = 1000
+				\item Norm Error
+				\item Threshold = 0.05
+			\end{itemize}
+			$\rightarrow$ 15-16 ROIs
+			\vfill
+
+			\column{0.4\linewidth}
+			\vfill
+			\includegraphics[width=\linewidth, trim=75 0 0 0]{03_ConvergenceStudy/Results/NormError}\\
+			\vfill
+
+		\end{columns}
+
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Homogenization}
+
+		\begin{columns}
+			\column{0.5\linewidth}
+			\vfill
+			Setup
+			\begin{itemize}
+				\item Downsampling factor: 2
+				\item 16x1mm\textsuperscript{3} ROIs
+				\item Isotropic vs transverse
+				\item Mean $\mathbb{S}$ / Sample
+			\end{itemize}
+			\vfill
+
+			\column{0.4\linewidth}
+			\vfill
+			\includegraphics[width=\linewidth, trim=200 0 0 0]{05_Homogenization/Plots/ROIs}\\
+			\vfill
+
+		\end{columns}
 	\end{frame}
 		
 	%----------------------------------------------------------------
