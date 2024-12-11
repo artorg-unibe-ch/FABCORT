@@ -403,7 +403,7 @@ class Tensor():
 
             return B
         
-    def TransformTensor(self, A, OriginalBasis, NewBasis):
+    def Transform(self, A, OriginalBasis, NewBasis):
 
         # Build change of coordinate matrix
         O = OriginalBasis
