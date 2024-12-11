@@ -6,7 +6,7 @@ Read ISQ files and plot them in 3D using pyvista
 
 __author__ = ['Mathieu Simon']
 __date_created__ = '12-11-2024'
-__date__ = '15-11-2024'
+__date__ = '09-12-2024'
 __license__ = 'GPL'
 __version__ = '1.0'
 
@@ -14,9 +14,9 @@ __version__ = '1.0'
 #%% Imports
 
 import sys
-import pickle
 import argparse
 import numpy as np
+import pyvista as pv
 from pathlib import Path
 import SimpleITK as sitk
 import matplotlib.pyplot as plt
@@ -614,7 +614,28 @@ def Main():
     YPos = np.round(YPos).astype(int)
     ZPos = np.round(ZPos).astype(int)
 
-    # Select ROIs
+    # Plot using pyvista
+    Args = dict(font_family='times', 
+                font_size=30,
+                location='outer',
+                show_xlabels=False,
+                show_ylabels=False,
+                show_zlabels=False,
+                all_edges=True,
+                fmt='%i',
+                xtitle=f'{len(XPos)} ROIs',
+                ytitle=f'{len(YPos)} ROIs',
+                ztitle=f'{len(ZPos)} ROIs',
+                use_3d_text=False
+                )
+    Array = sitk.GetArrayFromImage(Scan).T
+    pl = pv.Plotter(off_screen=True)
+    actors = pl.add_volume(255-Array,
+                cmap='bone',
+                show_scalar_bar=False)
+    actors.prop.interpolation_type = 'linear'
+
+    # Select ROIs and plot them
     Time.Update(1/2, 'Select ROIs')
     Text = '$ROI,\n'
     ROIMap = []
@@ -625,6 +646,10 @@ def Main():
                 Y1, Y2 = int(Y - HalfSize), int(Y + HalfSize)
                 Z1, Z2 = int(Z - HalfSize), int(Z + HalfSize)
                 ROI = Scan[X1:X2,Y1:Y2,Z1:Z2]
+
+                # Plot ROI position
+                Mesh = pv.Cube((X,Y,Z), 2*HalfSize, 2*HalfSize, 2*HalfSize)
+                pl.add_mesh(Mesh, color=(0.0,0,0), opacity=1, style='wireframe', line_width=3)
                 
                 # Resample ROI and write it
                 Resampled = Image.Resample(ROI, Factor=2)
@@ -637,6 +662,17 @@ def Main():
                 # Store ROI position
                 ROIMap.append((X,Y,Z))
 
+    # Finalize and save plot
+    pl.add_mesh(Mesh, color=(1.0,0,0), opacity=1)
+    pl.camera_position = 'xz'
+    pl.camera.roll = 0
+    pl.camera.elevation = 30
+    pl.camera.azimuth = 120
+    pl.camera.zoom(0.9)
+    pl.show_bounds(**Args)
+    pl.screenshot(Path(__file__).parent / 'Results/ROIs.png', return_img=False)
+
+    # Save ROI map
     np.save(Path(__file__).parent/ 'ROIMap.npy', ROIMap)
 
     # Write parameter file
