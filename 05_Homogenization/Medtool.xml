@@ -1,13 +1,13 @@
 <!DOCTYPE MedToolXML>
-<MedToolXML writeonly="yes" workdir="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT" cpu="1" exefile="" resfile="" level="Expert" paramfile="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT/01_Scripts/SampleList.csv">
- <_Fabric active="no" script="mia">
+<MedToolXML resfile="" exefile="" workdir="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT" writeonly="yes" level="Expert" paramfile="C:/Users/mathi/OneDrive - Universitaet Bern/FABCORT/05_Homogenization/Parameters.csv" cpu="1">
+ <_Fabric active="yes" script="mia">
   <modulName>
    <description>MIA - Medical Image Analyzer</description>
   </modulName>
   <in>
    <description>Input File Name</description>
    <type>fileEntryIn</type>
-   <value>00_Data/$Sample.mhd</value>
+   <value>05_Homogenization/ROIs/$Folder/ROI_$ROI.mhd</value>
    <default>test.mhd</default>
    <optional>no</optional>
    <active>yes</active>
@@ -18,7 +18,7 @@
   <out>
    <description>Analysis Output File Name</description>
    <type>entry</type>
-   <value>02_Results/Fabric/$Sample.fab</value>
+   <value>05_Homogenization/Fabric/$Folder/ROI_$ROI.fab</value>
    <default>test.fab</default>
    <optional>no</optional>
    <active>yes</active>
@@ -51,7 +51,7 @@
   <thres>
    <description>Threshold (value)</description>
    <type>entry</type>
-   <value>131</value>
+   <value>$Threshold</value>
    <default>75</default>
    <optional>yes</optional>
    <active>yes</active>
@@ -199,7 +199,7 @@
   <in>
    <description>Image input file name | filename</description>
    <type>fileEntryIn</type>
-   <value>00_Data/$Sample.mhd</value>
+   <value>05_Homogenization/ROIs/$Folder/ROI_$ROI.mhd</value>
    <default>slice.mhd</default>
    <optional>no</optional>
    <active>yes</active>
@@ -221,7 +221,7 @@
   <out>
    <description>Image output file name | filename</description>
    <type>fileEntryOut</type>
-   <value>02_Results/Mesh/$Sample.mhd</value>
+   <value>05_Homogenization/Elasticity/$Folder/ROI_$ROI.mhd</value>
    <default>test.mhd</default>
    <optional>yes</optional>
    <active>yes</active>
@@ -807,7 +807,7 @@
    <value>5</value>
    <default>2</default>
    <optional>yes</optional>
-   <active>yes</active>
+   <active>no</active>
    <info>int</info>
    <level>Simple</level>
    <menu>Resize Filters</menu>
@@ -925,7 +925,7 @@
   <thres>
    <description>Threshold by value(s) | thres1;thres2;thres3</description>
    <type>entry</type>
-   <value>131</value>
+   <value>$Threshold</value>
    <default>75</default>
    <optional>yes</optional>
    <active>yes</active>
@@ -1117,7 +1117,7 @@
   <in>
    <description>Image input file name | filename</description>
    <type>fileEntryIn</type>
-   <value>02_Results/Mesh/$Sample.mhd</value>
+   <value>05_Homogenization/Elasticity/$Folder/ROI_$ROI.mhd</value>
    <default>slice.mhd</default>
    <optional>no</optional>
    <active>yes</active>
@@ -1139,7 +1139,7 @@
   <out>
    <description>Image output file name | filename</description>
    <type>fileEntryOut</type>
-   <value>02_Results/Mesh/$Sample.mhd</value>
+   <value>05_Homogenization/Elasticity/$Folder/ROI_$ROI.mhd</value>
    <default>test.mhd</default>
    <optional>yes</optional>
    <active>yes</active>
@@ -1241,7 +1241,7 @@
    <value>01_Scripts/Template.inp</value>
    <default>main_temp.inp</default>
    <optional>yes</optional>
-   <active>yes</active>
+   <active>no</active>
    <info>inp;txt;mesh;in</info>
    <level>Expert</level>
    <menu>Write Parameters</menu>
@@ -1414,7 +1414,7 @@
   <arith>
    <description>Compute equation | operation1;operation2;operation3;operation4</description>
    <type>entry</type>
-   <value>?&lt;130=1;?==131=2</value>
+   <value>?&lt;$Threshold=1;?==$Threshold=2</value>
    <default>?&lt;0=0;/8;*7;-5;&lt;A;+3;&lt;B;>A;^2;/B</default>
    <optional>yes</optional>
    <active>yes</active>
@@ -2035,7 +2035,7 @@
   <in>
    <description>Image file name | filename</description>
    <type>fileEntryIn</type>
-   <value>02_Results/Mesh/$Sample.mhd</value>
+   <value>05_Homogenization/Elasticity/$Folder/ROI_$ROI.mhd</value>
    <default>image.mhd</default>
    <optional>no</optional>
    <active>yes</active>
@@ -2046,7 +2046,7 @@
   <out>
    <description>FEA job output file | filename</description>
    <type>fileEntryOut</type>
-   <value>02_Results/Mesh/$Sample_Mesh.inp</value>
+   <value>05_Homogenization/Elasticity/$Folder/ROI_$ROI_Mesh.inp</value>
    <default>model.inp</default>
    <optional>no</optional>
    <active>yes</active>
@@ -2183,7 +2183,7 @@
   <in>
    <description>Abaqus Input File Name</description>
    <type>fileEntryInEdit</type>
-   <value>02_Results/Mesh/$Sample_Mesh.inp</value>
+   <value>05_Homogenization/Elasticity/$Folder/ROI_$ROI_Mesh.inp</value>
    <default>testIn.inp</default>
    <optional>no</optional>
    <active>yes</active>
@@ -2194,7 +2194,7 @@
   <out>
    <description>Abaqus Output File Name</description>
    <type>fileEntryOut</type>
-   <value>02_Results/Mesh/$Sample_KUBCs.inp</value>
+   <value>05_Homogenization/Elasticity/$Folder/ROI_$ROI_KUBCs.inp</value>
    <default>testOut.inp</default>
    <optional>no</optional>
    <active>yes</active>

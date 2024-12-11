@@ -5,8 +5,8 @@ Read ISQ files and plot them in 3D using pyvista
 """
 
 __author__ = ['Mathieu Simon']
-__date_created__ = '11-11-2024'
-__date__ = '11-11-2024'
+__date_created__ = '10-12-2024'
+__date__ = '10-12-2024'
 __license__ = 'GPL'
 __version__ = '1.0'
 
@@ -19,12 +19,13 @@ import SimpleITK as sitk
 
 #%% Functions
 
-def WriteMain(FileName, Size, Symmetry):
+def WriteMain(Sample, FileName, Size, Type='Isotropic'):
 
     L1, L2, L3 = Size
     Shift = 8
-    Mesh = FileName.name[:-Shift] + 'Mesh.inp'
-    BCs = FileName.name[:-Shift] + 'KUBCs.inp'
+    Mesh = FileName.name[:Shift] + 'Mesh.inp'
+    BCs = FileName.name[:Shift] + 'KUBCs.inp'
+    Main = FileName.name[:Shift] + f'Main_{Type}.inp'
 
     Text = f"""**********************************************
 **
@@ -45,12 +46,12 @@ u3  = {L3/1000}
 **
 ** Node, Element, and Material Definitons 
 **********************************************
-*INCLUDE, INPUT=/home/ms20s284/FABCORT/Mesh/{Mesh}
-*INCLUDE, INPUT=/home/ms20s284/FABCORT/Homogenization_{Symmetry}/Material.inp
+*INCLUDE, INPUT=/home/ms20s284/FABCORT/Homogenization/{Sample}/{Mesh}
+*INCLUDE, INPUT=/home/ms20s284/FABCORT/Homogenization/Material_{Type}.inp
 **
 ** Interactions (*Equation and *Nset)
 **********************************************
-*INCLUDE, INPUT=/home/ms20s284/FABCORT/Mesh/{BCs}
+*INCLUDE, INPUT=/home/ms20s284/FABCORT/Homogenization/{Sample}/{BCs}
 **
 ** Steps Definitions
 ***************** Tensile 1 ******************
@@ -218,7 +219,7 @@ IVOL, S, E
 """
 
 
-    FilePath = FileName.parents[1] / f'Homogenization_{Symmetry}' / (FileName.name[:-Shift] + 'Main.inp')
+    FilePath = FileName.parent / Main
     with open(FilePath,'w') as File:
         File.write(Text)
 
@@ -242,23 +243,75 @@ IVOL, S, E
 
     return
 
+def WriteBash(Sample, FileName, Size, Type='Isotropic'):
+
+    Shift = 8
+    Main = FileName[:Shift] + f'Main_{Type}.inp'
+    Job = FileName[:Shift] + f'{Type}'
+    ODBFile = FileName[:Shift] + f'{Type}.odb'
+    OutFile = FileName[:Shift] + f'{Type}.out'
+
+    Text = f"""abaqus interactive job={Job} inp="/home/ms20s284/FABCORT/Homogenization/{Sample}/{Main}" cpus=24
+abaqus python "/home/ms20s284/FABCORT/Scripts/abqSeReader.py" in="/home/ms20s284/FABCORT/Simulations/{ODBFile}"  out="/home/ms20s284/FABCORT/Homogenization/{Sample}/{OutFile}"  size="{Size[0]};{Size[1]};{Size[2]}" spec="Stress" 
+rm * 
+"""
+
+    with open(Path(__file__).parent / 'RunAbaqus.bash','a') as File:
+        File.write(Text)
+
+    return
+
 #%% Main
 
-def Main(Arguments):
+def Main():
 
-    # Read Arguments
-    if Arguments.AbaqusInp:
-        InputISQs = [Arguments.InputISQ]
-    else:
-        DataPath = Path(__file__).parents[1] / '02_Results/Mesh/'
-        AbaqusInps = sorted([F for F in Path.iterdir(DataPath) if F.name.endswith('Mesh.inp')])
+    # Write bash script
+    with open(Path(__file__).parent / 'RunAbaqus.bash','w') as File:
+        File.write('# Bash script to run abaqus simulations and get homogenized stress\n')
 
-    for Input in AbaqusInps:
-        Image = sitk.ReadImage(str(Input)[:-9] + '.mhd')
-        Size = [int(Si * Sp) for Si,Sp in zip(Image.GetSize(), Image.GetSpacing())]
-        for Symmetry in ['Isotropic', 'Transverse']:
-            WriteMain(Input, Size, Symmetry)
+    # List folders
+    DataPath = Path(__file__).parent / 'Elasticity'
+    Folders = sorted(F for F in DataPath.iterdir() if F.is_dir())
 
+    # Abaqus input files
+    AbaqusInps = []
+    for x in range(2):
+        for y in range(2):
+            for z in range(4):
+                for Type in ['Isotropic', 'Transverse']:
+                    AbaqusInps.append(f'ROI_{x+1}{y+1}{z+1}_{Type}')
+
+    # Iterate over each folder
+    for Folder in Folders:
+
+        # List output files to avoid already completed simulations
+        AbaqusOuts = [F.name[:-4] for F in Folder.iterdir() if F.name.endswith('.out')]
+        for Out in AbaqusOuts:
+            if Out in AbaqusInps:
+                Idx = AbaqusInps.index(Out)
+                AbaqusInps.pop(Idx)
+
+        # Full file path
+        for Idx, Inp in enumerate(AbaqusInps):
+            AbaqusInps[Idx] = Folder / Inp
+
+        for Input in AbaqusInps:
+
+            # Define simulation type
+            Type = Input.name[7:]
+
+            # If temporary file, remove it
+            TempFile = str(Input)[:-len(Type)] + '_temp.inp'
+            if Path(TempFile).exists():
+                Path(TempFile).unlink()
+
+            # Get image size
+            Image = sitk.ReadImage(str(Input)[:-len(Type)] + '.mhd')
+            Size = [int(Si * Sp) for Si,Sp in zip(Image.GetSize(), Image.GetSpacing())]
+
+            # Write files
+            WriteMain(Input.parent.name, Input, Size, Type)
+            WriteBash(Input.parent.name, Input.name, Size, Type)
 
 
 if __name__ == '__main__':
@@ -268,10 +321,7 @@ if __name__ == '__main__':
     # Add optional argument
     ScriptVersion = Parser.prog + ' version ' + __version__
     Parser.add_argument('-v', '--Version', help='Show script version', action='version', version=ScriptVersion)
-    Parser.add_argument('--AbaqusInp', help='Sample Abaqus mesh file name', type=str)
 
-    # Read arguments from the command line
-    Arguments = Parser.parse_args()
-    Main(Arguments)
+    Main()
 
 #%%
