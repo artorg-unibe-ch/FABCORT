@@ -6,385 +6,23 @@ Read ISQ files and plot them in 3D using pyvista
 
 __author__ = ['Mathieu Simon']
 __date_created__ = '12-11-2024'
-__date__ = '15-11-2024'
+__date__ = '10-12-2024'
 __license__ = 'GPL'
 __version__ = '1.0'
 
 
 #%% Imports
 
+import sys
 import argparse
 import numpy as np
-import pandas as pd
+import pyvista as pv
 from pathlib import Path
-from scipy.stats import t
-import matplotlib.pyplot as plt
-from scipy.stats import ttest_rel, ttest_ind
-from scipy.stats.distributions import norm, t
 
-np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
+sys.path.append(str(Path(__file__).parents[1]))
+from Utils import Time, Read, Tensor
 
 #%% Functions
-
-def GetFabric(FileName):
-
-    Text = open(FileName,'r').readlines()
-    BVTV = float(Text[12].split('=')[1])
-    eValues = np.array(Text[18].split(':')[1].split(),float)
-    eVectors = np.zeros((3,3))
-    for i in range(3):
-        eVectors[i] = Text[19+i].split(':')[1].split()
-
-    return eValues, eVectors, BVTV
-
-def Engineering2MandelNotation(A):
-
-    B = np.zeros((6,6))
-    for i in range(6):
-        for j in range(6):
-            if i < 3 and j >= 3:
-                B[i,j] = A[i,j] * np.sqrt(2)
-            elif i >= 3 and j < 3:
-                B[i,j] = A[i,j] * np.sqrt(2)
-            elif i >= 3 and j >= 3:
-                B[i,j] = A[i,j] * 2
-            else:
-                B[i, j] = A[i, j]
-
-    return B
-
-def IsoMorphism66_3333(A):
-
-    # Check symmetry
-    Symmetry = True
-    for i in range(6):
-        for j in range(6):
-            if not A[i,j] == A[j,i]:
-                Symmetry = False
-                break
-    if Symmetry == False:
-        print('Matrix is not symmetric!')
-        return
-
-    B = np.zeros((3,3,3,3))
-
-    # Build 4th tensor
-    B[0, 0, 0, 0] = A[0, 0]
-    B[1, 1, 0, 0] = A[1, 0]
-    B[2, 2, 0, 0] = A[2, 0]
-    B[1, 2, 0, 0] = A[3, 0] / np.sqrt(2)
-    B[2, 0, 0, 0] = A[4, 0] / np.sqrt(2)
-    B[0, 1, 0, 0] = A[5, 0] / np.sqrt(2)
-
-    B[0, 0, 1, 1] = A[0, 1]
-    B[1, 1, 1, 1] = A[1, 1]
-    B[2, 2, 1, 1] = A[2, 1]
-    B[1, 2, 1, 1] = A[3, 1] / np.sqrt(2)
-    B[2, 0, 2, 1] = A[4, 1] / np.sqrt(2)
-    B[0, 1, 2, 1] = A[5, 1] / np.sqrt(2)
-
-    B[0, 0, 2, 2] = A[0, 2]
-    B[1, 1, 2, 2] = A[1, 2]
-    B[2, 2, 2, 2] = A[2, 2]
-    B[1, 2, 2, 2] = A[3, 2] / np.sqrt(2)
-    B[2, 0, 2, 2] = A[4, 2] / np.sqrt(2)
-    B[0, 1, 2, 2] = A[5, 2] / np.sqrt(2)
-
-    B[0, 0, 1, 2] = A[0, 3] / np.sqrt(2)
-    B[1, 1, 1, 2] = A[1, 3] / np.sqrt(2)
-    B[2, 2, 1, 2] = A[2, 3] / np.sqrt(2)
-    B[1, 2, 1, 2] = A[3, 3] / 2
-    B[2, 0, 1, 2] = A[4, 3] / 2
-    B[0, 1, 1, 2] = A[5, 3] / 2
-
-    B[0, 0, 2, 0] = A[0, 4] / np.sqrt(2)
-    B[1, 1, 2, 0] = A[1, 4] / np.sqrt(2)
-    B[2, 2, 2, 0] = A[2, 4] / np.sqrt(2)
-    B[1, 2, 2, 0] = A[3, 4] / 2
-    B[2, 0, 2, 0] = A[4, 4] / 2
-    B[0, 1, 2, 0] = A[5, 4] / 2
-
-    B[0, 0, 0, 1] = A[0, 5] / np.sqrt(2)
-    B[1, 1, 0, 1] = A[1, 5] / np.sqrt(2)
-    B[2, 2, 0, 1] = A[2, 5] / np.sqrt(2)
-    B[1, 2, 0, 1] = A[3, 5] / 2
-    B[2, 0, 0, 1] = A[4, 5] / 2
-    B[0, 1, 0, 1] = A[5, 5] / 2
-
-
-
-    # Add minor symmetries ijkl = ijlk and ijkl = jikl
-
-    B[0, 0, 0, 0] = B[0, 0, 0, 0]
-    B[0, 0, 0, 0] = B[0, 0, 0, 0]
-
-    B[0, 0, 1, 0] = B[0, 0, 0, 1]
-    B[0, 0, 0, 1] = B[0, 0, 0, 1]
-
-    B[0, 0, 1, 1] = B[0, 0, 1, 1]
-    B[0, 0, 1, 1] = B[0, 0, 1, 1]
-
-    B[0, 0, 2, 1] = B[0, 0, 1, 2]
-    B[0, 0, 1, 2] = B[0, 0, 1, 2]
-
-    B[0, 0, 2, 2] = B[0, 0, 2, 2]
-    B[0, 0, 2, 2] = B[0, 0, 2, 2]
-
-    B[0, 0, 0, 2] = B[0, 0, 2, 0]
-    B[0, 0, 2, 0] = B[0, 0, 2, 0]
-
-
-
-    B[0, 1, 0, 0] = B[0, 1, 0, 0]
-    B[1, 0, 0, 0] = B[0, 1, 0, 0]
-
-    B[0, 1, 1, 0] = B[0, 1, 0, 1]
-    B[1, 0, 0, 1] = B[0, 1, 0, 1]
-
-    B[0, 1, 1, 1] = B[0, 1, 1, 1]
-    B[1, 0, 1, 1] = B[0, 1, 1, 1]
-
-    B[0, 1, 2, 1] = B[0, 1, 1, 2]
-    B[1, 0, 1, 2] = B[0, 1, 1, 2]
-
-    B[0, 1, 2, 2] = B[0, 1, 2, 2]
-    B[1, 0, 2, 2] = B[0, 1, 2, 2]
-
-    B[0, 1, 0, 2] = B[0, 1, 2, 0]
-    B[1, 0, 2, 0] = B[0, 1, 2, 0]
-
-
-
-    B[1, 1, 0, 0] = B[1, 1, 0, 0]
-    B[1, 1, 0, 0] = B[1, 1, 0, 0]
-
-    B[1, 1, 1, 0] = B[1, 1, 0, 1]
-    B[1, 1, 0, 1] = B[1, 1, 0, 1]
-
-    B[1, 1, 1, 1] = B[1, 1, 1, 1]
-    B[1, 1, 1, 1] = B[1, 1, 1, 1]
-
-    B[1, 1, 2, 1] = B[1, 1, 1, 2]
-    B[1, 1, 1, 2] = B[1, 1, 1, 2]
-
-    B[1, 1, 2, 2] = B[1, 1, 2, 2]
-    B[1, 1, 2, 2] = B[1, 1, 2, 2]
-
-    B[1, 1, 0, 2] = B[1, 1, 2, 0]
-    B[1, 1, 2, 0] = B[1, 1, 2, 0]
-
-
-
-    B[1, 2, 0, 0] = B[1, 2, 0, 0]
-    B[2, 1, 0, 0] = B[1, 2, 0, 0]
-
-    B[1, 2, 1, 0] = B[1, 2, 0, 1]
-    B[2, 1, 0, 1] = B[1, 2, 0, 1]
-
-    B[1, 2, 1, 1] = B[1, 2, 1, 1]
-    B[2, 1, 1, 1] = B[1, 2, 1, 1]
-
-    B[1, 2, 2, 1] = B[1, 2, 1, 2]
-    B[2, 1, 1, 2] = B[1, 2, 1, 2]
-
-    B[1, 2, 2, 2] = B[1, 2, 2, 2]
-    B[2, 1, 2, 2] = B[1, 2, 2, 2]
-
-    B[1, 2, 0, 2] = B[1, 2, 2, 0]
-    B[2, 1, 2, 0] = B[1, 2, 2, 0]
-
-
-
-    B[2, 2, 0, 0] = B[2, 2, 0, 0]
-    B[2, 2, 0, 0] = B[2, 2, 0, 0]
-
-    B[2, 2, 1, 0] = B[2, 2, 0, 1]
-    B[2, 2, 0, 1] = B[2, 2, 0, 1]
-
-    B[2, 2, 1, 1] = B[2, 2, 1, 1]
-    B[2, 2, 1, 1] = B[2, 2, 1, 1]
-
-    B[2, 2, 2, 1] = B[2, 2, 1, 2]
-    B[2, 2, 1, 2] = B[2, 2, 1, 2]
-
-    B[2, 2, 2, 2] = B[2, 2, 2, 2]
-    B[2, 2, 2, 2] = B[2, 2, 2, 2]
-
-    B[2, 2, 0, 2] = B[2, 2, 2, 0]
-    B[2, 2, 2, 0] = B[2, 2, 2, 0]
-
-
-
-    B[2, 0, 0, 0] = B[2, 0, 0, 0]
-    B[0, 2, 0, 0] = B[2, 0, 0, 0]
-
-    B[2, 0, 1, 0] = B[2, 0, 0, 1]
-    B[0, 2, 0, 1] = B[2, 0, 0, 1]
-
-    B[2, 0, 1, 1] = B[2, 0, 1, 1]
-    B[0, 2, 1, 1] = B[2, 0, 1, 1]
-
-    B[2, 0, 2, 1] = B[2, 0, 1, 2]
-    B[0, 2, 1, 2] = B[2, 0, 1, 2]
-
-    B[2, 0, 2, 2] = B[2, 0, 2, 2]
-    B[0, 2, 2, 2] = B[2, 0, 2, 2]
-
-    B[2, 0, 0, 2] = B[2, 0, 2, 0]
-    B[0, 2, 2, 0] = B[2, 0, 2, 0]
-
-
-    # Complete minor symmetries
-    B[0, 2, 1, 0] = B[0, 2, 0, 1]
-    B[0, 2, 0, 2] = B[0, 2, 2, 0]
-    B[0, 2, 2, 1] = B[0, 2, 1, 2]
-
-    B[1, 0, 1, 0] = B[1, 0, 0, 1]
-    B[1, 0, 0, 2] = B[1, 0, 2, 0]
-    B[1, 0, 2, 1] = B[1, 0, 1, 2]
-
-    B[2, 1, 1, 0] = B[2, 1, 0, 1]
-    B[2, 1, 0, 2] = B[2, 1, 2, 0]
-    B[2, 1, 2, 1] = B[2, 1, 1, 2]
-
-
-    # Add major symmetries ijkl = klij
-    B[0, 1, 1, 1] = B[1, 1, 0, 1]
-    B[1, 0, 1, 1] = B[1, 1, 1, 0]
-
-    B[0, 2, 1, 1] = B[1, 1, 0, 2]
-    B[2, 0, 1, 1] = B[1, 1, 2, 0]
-
-
-    return B
-
-def CheckMinorSymmetry(A):
-    MinorSymmetry = True
-    for i in range(3):
-        for j in range(3):
-            PartialTensor = A[:,:, i, j]
-            if PartialTensor[1, 0] == PartialTensor[0, 1] and PartialTensor[2, 0] == PartialTensor[0, 2] and PartialTensor[1, 2] == PartialTensor[2, 1]:
-                MinorSymmetry = True
-            else:
-                MinorSymmetry = False
-                break
-
-    if MinorSymmetry == True:
-        for i in range(3):
-            for j in range(3):
-                PartialTensor = np.squeeze(A[i, j,:,:])
-                if PartialTensor[1, 0] == PartialTensor[0, 1] and PartialTensor[2, 0] == PartialTensor[0, 2] and PartialTensor[1, 2] == PartialTensor[2, 1]:
-                    MinorSymmetry = True
-                else:
-                    MinorSymmetry = False
-                    break
-
-    return MinorSymmetry
-
-def IsoMorphism3333_66(A):
-
-    if CheckMinorSymmetry == False:
-        print('Tensor does not present minor symmetry')
-    else:
-
-        B = np.zeros((6,6))
-
-        B[0, 0] = A[0, 0, 0, 0]
-        B[0, 1] = A[0, 0, 1, 1]
-        B[0, 2] = A[0, 0, 2, 2]
-        B[0, 3] = np.sqrt(2) * A[0, 0, 1, 2]
-        B[0, 4] = np.sqrt(2) * A[0, 0, 2, 0]
-        B[0, 5] = np.sqrt(2) * A[0, 0, 0, 1]
-
-        B[1, 0] = A[1, 1, 0, 0]
-        B[1, 1] = A[1, 1, 1, 1]
-        B[1, 2] = A[1, 1, 2, 2]
-        B[1, 3] = np.sqrt(2) * A[1, 1, 1, 2]
-        B[1, 4] = np.sqrt(2) * A[1, 1, 2, 0]
-        B[1, 5] = np.sqrt(2) * A[1, 1, 0, 1]
-
-        B[2, 0] = A[2, 2, 0, 0]
-        B[2, 1] = A[2, 2, 1, 1]
-        B[2, 2] = A[2, 2, 2, 2]
-        B[2, 3] = np.sqrt(2) * A[2, 2, 1, 2]
-        B[2, 4] = np.sqrt(2) * A[2, 2, 2, 0]
-        B[2, 5] = np.sqrt(2) * A[2, 2, 0, 1]
-
-        B[3, 0] = np.sqrt(2) * A[1, 2, 0, 0]
-        B[3, 1] = np.sqrt(2) * A[1, 2, 1, 1]
-        B[3, 2] = np.sqrt(2) * A[1, 2, 2, 2]
-        B[3, 3] = 2 * A[1, 2, 1, 2]
-        B[3, 4] = 2 * A[1, 2, 2, 0]
-        B[3, 5] = 2 * A[1, 2, 0, 1]
-
-        B[4, 0] = np.sqrt(2) * A[2, 0, 0, 0]
-        B[4, 1] = np.sqrt(2) * A[2, 0, 1, 1]
-        B[4, 2] = np.sqrt(2) * A[2, 0, 2, 2]
-        B[4, 3] = 2 * A[2, 0, 1, 2]
-        B[4, 4] = 2 * A[2, 0, 2, 0]
-        B[4, 5] = 2 * A[2, 0, 0, 1]
-
-        B[5, 0] = np.sqrt(2) * A[0, 1, 0, 0]
-        B[5, 1] = np.sqrt(2) * A[0, 1, 1, 1]
-        B[5, 2] = np.sqrt(2) * A[0, 1, 2, 2]
-        B[5, 3] = 2 * A[0, 1, 1, 2]
-        B[5, 4] = 2 * A[0, 1, 2, 0]
-        B[5, 5] = 2 * A[0, 1, 0, 1]
-
-        return B
-    
-def TransformTensor(A,OriginalBasis,NewBasis):
-
-    # Build change of coordinate matrix
-    O = OriginalBasis
-    N = NewBasis
-
-    Q = np.zeros((3,3))
-    for i in range(3):
-        for j in range(3):
-            Q[i,j] = np.dot(O[i,:],N[j,:])
-
-    if A.size == 36:
-        A4 = IsoMorphism66_3333(A)
-
-    elif A.size == 81 and A.shape == (3,3,3,3):
-        A4 = A
-
-    TransformedA = np.zeros((3, 3, 3, 3))
-    for i in range(3):
-        for j in range(3):
-            for k in range(3):
-                for l in range(3):
-                    for m in range(3):
-                        for n in range(3):
-                            for o in range(3):
-                                for p in range(3):
-                                    TransformedA[i, j, k, l] += Q[m,i]*Q[n,j]*Q[o,k]*Q[p,l] * A4[m, n, o, p]
-    if A.size == 36:
-        TransformedA = IsoMorphism3333_66(TransformedA)
-
-    return TransformedA
-
-def Mandel2EngineeringNotation(A):
-
-    B = np.zeros((6,6))
-
-    for i in range(6):
-        for j in range(6):
-
-            if i < 3 and j >= 3:
-                B[i,j] = A[i,j] / np.sqrt(2)
-
-            elif i >= 3 and j < 3:
-                B[i,j] = A[i,j] / np.sqrt(2)
-
-            elif i >= 3 and j >= 3:
-                B[i,j] = A[i,j] / 2
-
-            else:
-                B[i, j] = A[i, j]
-
-    return B
 
 def PlotFabricROI(ROI:np.array, eValues:np.array, eVectors:np.array, FileName:Path) -> None:
 
@@ -484,10 +122,10 @@ def PlotStiffnessROI(ROI:np.array, StiffnessTensor:np.array, FileName:Path) -> N
     ElongationModulus = np.zeros(Sphere.points.shape)
     BulkModulus = np.zeros(len(Sphere.points))
     for p, Point in enumerate(Sphere.points):
-        N = DyadicProduct(Point, Point)
-        SN = Transform(StiffnessTensor, N)
-        ElongationModulus[p] = FrobeniusProduct(N, SN) * Point
-        BulkModulus[p] = FrobeniusProduct(I, SN)
+        N = Tensor.DyadicProduct(Point, Point)
+        SN = Tensor.Transform(StiffnessTensor, N)
+        ElongationModulus[p] = Tensor.FrobeniusProduct(N, SN) * Point
+        BulkModulus[p] = Tensor.FrobeniusProduct(I, SN)
 
     # # Scale the sphere by the square roots of the eigenvalues
     # Scale = ROI.shape[0]/2 / max(np.linalg.norm(ElongationModulus, axis=1))
@@ -542,7 +180,6 @@ def PlotStiffnessROI(ROI:np.array, StiffnessTensor:np.array, FileName:Path) -> N
 
     return
 
-
 #%% Main
 
 def Main():
@@ -551,13 +188,9 @@ def Main():
     Strain = np.array([0.001, 0.001, 0.001, 0.002, 0.002, 0.002])
 
     # Get fabric info
-    eValues, eVectors, BVTV = GetFabric(DataPath / 'Fabric.fab')
-
-    # Sort fabric
-    Arg = np.argsort(eValues)
-    eValues = eValues[Arg]
-    eVectors = eVectors[Arg]
-    m1, m2, m3 = eValues
+    Fabric = Read.Fabric(DataPath / 'Fabric.fab')
+    eValues = Fabric[0]
+    eVectors = Fabric[1]
 
     # Get homogenization stress results
     Isotropic = open(DataPath / 'Cube_Isotropic.out', 'r').readlines()
@@ -586,12 +219,12 @@ def Main():
     Stiffness = 1/2 * (FabStiffness + FabStiffness.T)
 
     # Write tensor into mandel notation
-    Mandel = Engineering2MandelNotation(Stiffness)
+    Mandel = Tensor.Engineering2MandelNotation(Stiffness)
 
     # Step 3: Transform tensor into fabric coordinate system
     I = np.eye(3)
     Q = np.array(eVectors)
-    Transformed = TransformTensor(Mandel, I, Q)
+    Transformed = Tensor.Transform(Mandel, I, Q)
 
     # Project onto orthotropy
     Orthotropic = np.zeros(Transformed.shape)
@@ -603,7 +236,7 @@ def Main():
                 Orthotropic[i, j] = Transformed[i, j]
 
     # Get tensor back to engineering notation
-    Stiffness = Mandel2EngineeringNotation(Orthotropic)
+    Stiffness = Tensor.Mandel2EngineeringNotation(Orthotropic)
 
     # Print results
     print('\nStiffness matrix of isotropic material')
