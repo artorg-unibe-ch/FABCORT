@@ -243,7 +243,7 @@ IVOL, S, E
 
     return
 
-def WriteBash(Sample, FileName, Size, Type='Isotropic'):
+def WriteBash(BatchNumber, Sample, FileName, Size, Type='Isotropic'):
 
     Shift = 8
     Main = FileName[:Shift] + f'Main_{Type}.inp'
@@ -251,12 +251,12 @@ def WriteBash(Sample, FileName, Size, Type='Isotropic'):
     ODBFile = FileName[:Shift] + f'{Type}.odb'
     OutFile = FileName[:Shift] + f'{Type}.out'
 
-    Text = f"""abaqus interactive job={Job} inp="/home/ms20s284/FABCORT/Homogenization/{Sample}/{Main}" cpus=24
-abaqus python "/home/ms20s284/FABCORT/Scripts/abqSeReader.py" in="/home/ms20s284/FABCORT/Simulations/{ODBFile}"  out="/home/ms20s284/FABCORT/Homogenization/{Sample}/{OutFile}"  size="{Size[0]};{Size[1]};{Size[2]}" spec="Stress" 
+    Text = f"""abaqus interactive job={Job} inp="/home/ms20s284/FABCORT/Homogenization/{Sample}/{Main}" cpus=16
+abaqus python "/home/ms20s284/FABCORT/Scripts/abqSeReader.py" in="/home/ms20s284/FABCORT/Simulations{BatchNumber}/{ODBFile}"  out="/home/ms20s284/FABCORT/Homogenization/{Sample}/{OutFile}"  size="{Size[0]};{Size[1]};{Size[2]}" spec="Stress" 
 rm * 
 """
 
-    with open(Path(__file__).parent / 'RunAbaqus.bash','a') as File:
+    with open(Path(__file__).parent / f'RunAbaqus_{BatchNumber}.bash','a') as File:
         File.write(Text)
 
     return
@@ -264,10 +264,6 @@ rm *
 #%% Main
 
 def Main():
-
-    # Write bash script
-    with open(Path(__file__).parent / 'RunAbaqus.bash','w') as File:
-        File.write('# Bash script to run abaqus simulations and get homogenized stress\n')
 
     # List folders
     DataPath = Path(__file__).parent / 'Elasticity'
@@ -282,23 +278,38 @@ def Main():
                     AbaqusInps.append(f'ROI_{x+1}{y+1}{z+1}_{Type}')
 
     # Iterate over each folder
+    AllInps = []
     for Folder in Folders:
 
         # List output files to avoid already completed simulations
         AbaqusOuts = [F.name[:-4] for F in Folder.iterdir() if F.name.endswith('.out')]
+        FolderInps = AbaqusInps.copy()
         for Out in AbaqusOuts:
-            if Out in AbaqusInps:
-                Idx = AbaqusInps.index(Out)
-                AbaqusInps.pop(Idx)
+            if Out in FolderInps:
+                Idx = FolderInps.index(Out)
+                FolderInps.pop(Idx)
 
         # Full file path
-        for Idx, Inp in enumerate(AbaqusInps):
-            AbaqusInps[Idx] = Folder / Inp
+        for Idx, Inp in enumerate(FolderInps):
+            FolderInps[Idx] = Folder / Inp
+        
+        # Store file list
+        [AllInps.append(I) for I in FolderInps]
+        
 
-        for Input in AbaqusInps:
+    # Write bash script
+    NBatch = 6
+    BatchSize = len(AllInps) // NBatch
+
+    for N in range(NBatch):
+
+        with open(Path(__file__).parent / f'RunAbaqus_{N+1}.bash','w') as File:
+            File.write('# Bash script to run abaqus simulations and get homogenized stress\n')
+
+        for Input in AllInps[N*BatchSize:(N+1)*BatchSize]:
 
             # Define simulation type
-            Type = Input.name[7:]
+            Type = Input.name.split('_')[-1]
 
             # If temporary file, remove it
             TempFile = str(Input)[:-len(Type)] + '_temp.inp'
@@ -306,12 +317,12 @@ def Main():
                 Path(TempFile).unlink()
 
             # Get image size
-            Image = sitk.ReadImage(str(Input)[:-len(Type)] + '.mhd')
+            Image = sitk.ReadImage(str(Input)[:-len(Type)-1] + '.mhd')
             Size = [int(Si * Sp) for Si,Sp in zip(Image.GetSize(), Image.GetSpacing())]
 
             # Write files
-            WriteMain(Input.parent.name, Input, Size, Type)
-            WriteBash(Input.parent.name, Input.name, Size, Type)
+            # WriteMain(Input.parent.name, Input, Size, Type)
+            WriteBash(N+1, Input.parent.name, Input.name, Size, Type)
 
 
 if __name__ == '__main__':
