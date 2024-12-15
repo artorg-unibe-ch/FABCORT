@@ -28,7 +28,7 @@ from Utils import Time, Read, Image, Tensor
 
 #%% Functions
 
-def OLS(X, Y, Alpha=0.95):
+def OLS(X, Y, Alpha=0.95, FName=''):
 
     # Solve linear system
     XTXi = np.linalg.inv(X.T * X)
@@ -86,10 +86,6 @@ def OLS(X, Y, Alpha=0.95):
     SMin = min([Y_Obs.min(), Y_Fit.min()]) / 5
     Colors=[(0,0,1),(0,1,0),(1,0,0)]
 
-    # Set boundaries of fabtib
-    SMax = 1e4
-    SMin = 1e-3
-
     Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
     # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
     Axes.plot(Y_Obs[X[:, 0] == 1], Y_Fit[X[:, 0] == 1],
@@ -114,7 +110,98 @@ def OLS(X, Y, Alpha=0.95):
     plt.yscale('log')
     plt.legend(loc='upper left')
     plt.subplots_adjust(left=0.15, bottom=0.15)
+    if len(FName) > 0:
+        plt.savefig(FName)
     plt.show()
+
+    return Parameters, R2adj, NE
+
+def OLS2(X, Y, Alpha=0.95, FName=''):
+
+    # Solve linear system
+    XTXi = np.linalg.inv(X.T * X)
+    B = XTXi * X.T * Y
+
+    # Compute residuals, variance, and covariance matrix
+    Y_Obs = Y
+    Y_Fit = X * B
+    Residuals = Y - X*B
+    DOFs = len(Y) - X.shape[1]
+    Sigma = Residuals.T * Residuals / DOFs
+    Cov = Sigma[0,0] * XTXi
+
+    # Compute B confidence interval
+    t_Alpha = t.interval(Alpha, DOFs)
+    B_CI_Low = B.T + t_Alpha[0] * np.sqrt(np.diag(Cov))
+    B_CI_Top = B.T + t_Alpha[1] * np.sqrt(np.diag(Cov))
+
+    # Store parameters in data frame
+    Parameters = pd.DataFrame(columns=[f'Parameter {i+1}' for i in range(len(B))])
+    Parameters.loc['Value'] = [P[0] for P in np.array(B)]
+    Parameters.loc['95% CI Low'] = [P for P in np.array(B_CI_Low)[0]]
+    Parameters.loc['95% CI Top'] = [P for P in np.array(B_CI_Top)[0]]
+
+    # Compute R2 and standard error of the estimate
+    RSS = np.sum([R**2 for R in Residuals])
+    SE = np.sqrt(RSS / DOFs)
+    TSS = np.sum([R**2 for R in (Y - Y.mean())])
+    RegSS = TSS - RSS
+    R2 = RegSS / TSS
+
+    # Compute R2adj and NE
+    R2adj = 1 - RSS/TSS * (len(Y)-1)/(len(Y)-X.shape[1]-1)
+
+    NE = []
+    for i in range(0,len(Y),12):
+        T_Obs = Y_Obs[i:i+12]
+        T_Fit = Y_Fit[i:i+12]
+        Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
+        Denominator = np.sum([T**2 for T in T_Obs])
+        NE.append(np.sqrt(Numerator/Denominator))
+    NE = np.array(NE)
+
+
+    # Prepare data for plot
+    Line = np.linspace(np.min(np.concatenate([X,Y])),
+                       np.max(np.concatenate([X,Y])), len(Y))
+    # B_0 = np.sort(np.sqrt(np.diag(X * Cov * X.T)))
+    # CI_Line_u = np.exp(Line + t_Alpha[0] * B_0)
+    # CI_Line_o = np.exp(Line + t_Alpha[1] * B_0)
+
+    # Plots
+    DPI = 500
+    Colors=[(0,0,1),(0,1,0),(1,0,0)]
+
+    # Elements
+    ii = np.tile([1,0,0,1,0,1,0,0,0],len(X)//9).astype(bool)
+    ij = np.tile([0,1,1,0,1,0,0,0,0],len(X)//9).astype(bool)
+    jj = np.tile([0,0,0,0,0,0,1,1,1],len(X)//9).astype(bool)
+
+    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
+    # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
+    Axes.plot(X[ii, 0], Y_Obs[ii],
+              color=Colors[0], linestyle='none', marker='s')
+    Axes.plot(X[ij, 0], Y_Obs[ij],
+              color=Colors[1], linestyle='none', marker='o')
+    Axes.plot(X[jj, 0], Y_Obs[jj],
+              color=Colors[2], linestyle='none', marker='^')
+    Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
+    Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
+    Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
+    Axes.plot(Line, Line, color=(0, 0, 0), linestyle='--')
+    Axes.annotate(r'N ROIs   : ' + str(len(Y)//12), xy=(0.3, 0.1), xycoords='axes fraction')
+    Axes.annotate(r'N Points : ' + str(len(Y)), xy=(0.3, 0.025), xycoords='axes fraction')
+    Axes.annotate(r'$R^2_{ajd}$: ' + format(round(R2adj, 3),'.3f'), xy=(0.65, 0.1), xycoords='axes fraction')
+    Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
+    Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
+    Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.legend(loc='upper left')
+    plt.subplots_adjust(left=0.15, bottom=0.15)
+    if len(FName) > 0:
+        plt.savefig(FName)
+    plt.close(Figure)
 
     return Parameters, R2adj, NE
 
@@ -229,51 +316,241 @@ def BoxPlot(ArraysList:list, Labels=['', 'Y'], SetsLabels=None,
 
 def Main():
 
+    # Read RUS data
+    DataPath = Path(__file__).parents[1] / '00_Data'
+    Data = pd.read_excel(DataPath / 'Cij.xls')
+
+    # List fabric files
+    FabricPath = Path(__file__).parents[1] / '01_Fabric/Results'
+    FabricFiles = [F.name for F in FabricPath.iterdir() if F.name.endswith('.fab')]
+
     # List simulations output files
     ResultsPath =Path(__file__).parent / 'Elasticity'
     Folders = [F for F in ResultsPath.iterdir() if F.is_dir()]
-    Folder = Folders[28]
     ROIs = []
     for x in range(2):
         for y in range(2):
             for z in range(4):
                     ROIs.append(f'ROI_{x+1}{y+1}{z+1}')
 
+    # List complete folders
+    cFolders = []
+    for Folder in Folders:
+        Outs = [F for F in Folder.iterdir() if F.name.endswith('.out')]
+        if len(Outs) == 32:
+            cFolders.append(Folder)
 
+    # Collect data
     Strain = np.array([0.001, 0.001, 0.001, 0.002, 0.002, 0.002])
-    Isotropic, Transverse = np.zeros((len(ROIs),6,6)), np.zeros((len(ROIs),6,6))
-    for r, ROI in enumerate(ROIs):
+    Isotropic = np.zeros((len(cFolders), len(ROIs), 6, 6))
+    Transverse = np.zeros((len(cFolders), len(ROIs), 6, 6))
+    RUS = np.zeros((len(cFolders), 6, 6))
+    Fabric = np.zeros((len(cFolders), 3))
+    for f, Folder in enumerate(cFolders):
 
-        # Get isotropic homogenization stress results
-        File = open(Folder / (ROI + '_Isotropic.out'), 'r').readlines()
-        Stress = np.zeros((6,6))
-        for i in range(6):
-            for j in range(6):
-                Stress[i,j] = float(File[i+4].split()[j+1])
+        # Iterate over each ROI
+        for r, ROI in enumerate(ROIs):
 
-        # Compute stiffness
-        for i in range(6):
-            for j in range(6):
-                Isotropic[r,i,j] = Stress[i,j] / Strain[i]
+            # Get simulation results
+            for S, sType in zip([Isotropic, Transverse],['Isotropic','Transverse']):
 
-        # Get transverse homogenization stress results
-        File = open(Folder / (ROI + '_Transverse.out'), 'r').readlines()
-        Stress = np.zeros((6,6))
-        for i in range(6):
-            for j in range(6):
-                Stress[i,j] = float(File[i+4].split()[j+1])
+                # Get homogenization stress results
+                File = open(Folder / (ROI + f'_{sType}.out'), 'r').readlines()
+                Stress = np.zeros((6,6))
+                for i in range(6):
+                    for j in range(6):
+                        Stress[i,j] = float(File[i+4].split()[j+1])
 
-        # Compute stiffness
-        for i in range(6):
-            for j in range(6):
-                Transverse[r,i,j] = Stress[i,j] / Strain[i]
+                # Compute stiffness
+                for i in range(6):
+                    for j in range(6):
+                        S[f,r,i,j] = Stress[i,j] / Strain[i]
 
-        # Symetrize matrix
-        Transverse[r] = 1/2 * (Transverse[r] + Transverse[r].T)
+                # Symetrize matrix
+                S[f,r] = 1/2 * (S[f,r] + S[f,r].T)
 
-    # Get average stiffness tensor
-    mIsotropic = np.mean(Isotropic, axis=0)
-    mTransverse = np.mean(Transverse, axis=0)
+        # Get sample fabric in original resolution
+        F1 = np.array([Folder.name[:4] in File for File in FabricFiles])
+        F2 = np.array([Folder.name[5:8] in File for File in FabricFiles])
+        F3 = np.array([Folder.name[-1] in File for File in FabricFiles])
+        Idx = np.argwhere(F1 & F2 & F3)[0][0]
+        FabricFile = FabricFiles[Idx]
+        FabricData = Read.Fabric(FabricPath / FabricFile)
+        Fabric[f] = FabricData[0]
+
+        # Get RUS data
+        F1 = Data['sample'] == Folder.name[:-2]
+        F2 = Data['Octant'] == Folder.name[-1]
+
+        # Build stiffness tensor
+        C11 = Data[F1&F2]['RUS:C11'].values[0]
+        C33 = Data[F1&F2]['RUS:C33'].values[0]
+        C44 = Data[F1&F2]['RUS:C44'].values[0]
+        C66 = Data[F1&F2]['RUS:C66'].values[0]
+        C13 = Data[F1&F2]['RUS:C13'].values[0]
+        C12 = C11 - 2*C66
+
+        C = np.array([[C11, C12, C13,   0,   0,   0],
+                        [C12, C11, C13,   0,   0,   0],
+                        [C13, C13, C33,   0,   0,   0],
+                        [  0,   0,   0, C44,   0,   0],
+                        [  0,   0,   0,   0, C44,   0],
+                        [  0,   0,   0,   0,   0, C66]])
+
+        RUS[f] = C
+
+    # Get average stiffness tensor per sample
+    mIsotropic = np.mean(Isotropic, axis=1)
+    mTransverse = np.mean(Transverse, axis=1)
+
+    # Compute anisotropy
+    aRUS = np.zeros((len(cFolders),3))
+    aFab = np.zeros((len(cFolders),3))
+    aIso = np.zeros((len(cFolders),3))
+    aTra = np.zeros((len(cFolders),3))
+    for A, C in zip([aRUS, aIso, aTra],[RUS, mIsotropic, mTransverse]):
+        A[:,0] = C[:,1,1] / C[:,0,0]
+        A[:,1] = C[:,2,2] / C[:,1,1]
+        A[:,2] = C[:,2,2] / C[:,0,0]
+    aFab[:,0] = Fabric[:,1] / Fabric[:,0]
+    aFab[:,1] = Fabric[:,2] / Fabric[:,1]
+    aFab[:,2] = Fabric[:,2] / Fabric[:,0]
+
+    # Plot anisotropies
+    Colors = [(0,0,0),(1,0,0),(0,0,1),(1,0,1)]
+    Labels = ['RUS','Fabric','Isotropic','Transverse']
+    FName = Path(__file__).parent / 'Plots/Anisotropy.png'
+    Figure, Axis = plt.subplots(1,1)
+    for c, C in enumerate([aRUS, aFab, aIso, aTra]):
+        Axis.plot(np.arange(3)+1, C[0], marker='o', color=Colors[c], label=Labels[c])
+        for A in C[1:]:
+            Axis.plot(np.arange(3)+1, A, marker='o', color=Colors[c])
+    Axis.set_xticks(np.arange(3)+1)
+    Axis.set_xticklabels(['$e_2$/$e_1$', '$e_3$/$e_2$', '$e_3$/$e_1$'])
+    Axis.set_xlabel('Directions')
+    Axis.set_ylabel('Anisotropy')
+    plt.legend()
+    plt.savefig(FName)
+    plt.close(Figure)
+
+
+    # Build linear system
+    X = np.matrix(np.ones((len(cFolders)*9, 1)))
+    Y = np.matrix(np.zeros((len(cFolders)*9, 1)))
+    for f in range(len(cFolders)):
+        
+        Start, Stop = 9*f, 9*(f+1)
+        X[Start:Stop] = [[RUS[f][0,0]],
+                         [RUS[f][0,1]],
+                         [RUS[f][0,2]],
+                         [RUS[f][1,1]],
+                         [RUS[f][1,2]],
+                         [RUS[f][2,2]],
+                         [RUS[f][3,3]],
+                         [RUS[f][4,4]],
+                         [RUS[f][5,5]]]
+        
+        Y[Start:Stop] = [[mIsotropic[f][0,0]],
+                         [mIsotropic[f][0,1]],
+                         [mIsotropic[f][0,2]],
+                         [mIsotropic[f][1,1]],
+                         [mIsotropic[f][1,2]],
+                         [mIsotropic[f][2,2]],
+                         [mIsotropic[f][3,3]],
+                         [mIsotropic[f][4,4]],
+                         [mIsotropic[f][5,5]]]
+       
+    FName = Path(__file__).parent / 'Plots/Elasticity_IsoRUS.png'
+    Parameters, R2adj, NE = OLS2(np.log(X), np.log(Y/1E3), FName=str(FName))
+
+    for f in range(len(cFolders)):
+        Start, Stop = 9*f, 9*(f+1)
+        Y[Start:Stop] = [[mTransverse[f][0,0]],
+                         [mTransverse[f][0,1]],
+                         [mTransverse[f][0,2]],
+                         [mTransverse[f][1,1]],
+                         [mTransverse[f][1,2]],
+                         [mTransverse[f][2,2]],
+                         [mTransverse[f][3,3]],
+                         [mTransverse[f][4,4]],
+                         [mTransverse[f][5,5]]]
+       
+    FName = Path(__file__).parent / 'Plots/Elasticity_TraRUS.png'
+    Parameters, R2adj, NE = OLS2(np.log(X), np.log(Y/1E3), FName=str(FName))
+
+
+    #     # Get fabric
+    #     F1 = np.array([Folder.name[:4] in File for File in FabricFiles])
+    #     F2 = np.array([Folder.name[5:8] in File for File in FabricFiles])
+    #     F3 = np.array([Folder.name[-1] in File for File in FabricFiles])
+    #     Idx = np.argwhere(F1 & F2 & F3)[0][0]
+    #     FabricFile = FabricFiles[Idx]
+    #     Fabric = Read.Fabric(FabricPath / FabricFile)
+    #     m1, m2, m3 = Fabric[0]
+    #     BVTV = Fabric[2]
+
+    #     # Get corresponding stiffness
+    #     Stiffness = mIsotropic[f]
+        
+    #     Start, Stop = 12*f, 12*(f+1)
+    #     Y[Start:Stop] = np.log([[Stiffness[0,0]],
+    #                             [Stiffness[0,1]],
+    #                             [Stiffness[0,2]],
+    #                             [Stiffness[1,0]],
+    #                             [Stiffness[1,1]],
+    #                             [Stiffness[1,2]],
+    #                             [Stiffness[2,0]],
+    #                             [Stiffness[2,1]],
+    #                             [Stiffness[2,2]],
+    #                             [Stiffness[1,2]],
+    #                             [Stiffness[2,0]],
+    #                             [Stiffness[0,1]]])
+        
+    #     X[Start:Stop] = np.array([[1, 0, 0, np.log(BVTV), np.log(m1 ** 2)],
+    #                               [0, 1, 0, np.log(BVTV), np.log(m1 * m2)],
+    #                               [0, 1, 0, np.log(BVTV), np.log(m1 * m3)],
+    #                               [0, 1, 0, np.log(BVTV), np.log(m2 * m1)],
+    #                               [1, 0, 0, np.log(BVTV), np.log(m2 ** 2)],
+    #                               [0, 1, 0, np.log(BVTV), np.log(m2 * m3)],
+    #                               [0, 1, 0, np.log(BVTV), np.log(m3 * m1)],
+    #                               [0, 1, 0, np.log(BVTV), np.log(m3 * m2)],
+    #                               [1, 0, 0, np.log(BVTV), np.log(m3 ** 2)],
+    #                               [0, 0, 1, np.log(BVTV), np.log(m2 * m3)],
+    #                               [0, 0, 1, np.log(BVTV), np.log(m3 * m1)],
+    #                               [0, 0, 1, np.log(BVTV), np.log(m1 * m2)]])
+
+    # # Build linear system
+    # X = np.matrix(np.ones((len(cFolders)*9, 1)))
+    # Y = np.matrix(np.zeros((len(cFolders)*9, 1)))
+    # for f, Folder in enumerate(cFolders):
+        
+    #     Start, Stop = 9*f, 9*(f+1)
+    #     X[Start:Stop] = [[RUS[f][0,0]],
+    #                      [RUS[f][0,1]],
+    #                      [RUS[f][0,2]],
+    #                      [RUS[f][1,1]],
+    #                      [RUS[f][1,2]],
+    #                      [RUS[f][2,2]],
+    #                      [RUS[f][3,3]],
+    #                      [RUS[f][4,4]],
+    #                      [RUS[f][5,5]]]
+        
+    #     Y[Start:Stop] = [[mIsotropic[f][0,0]],
+    #                      [mIsotropic[f][0,1]],
+    #                      [mIsotropic[f][0,2]],
+    #                      [mIsotropic[f][1,1]],
+    #                      [mIsotropic[f][1,2]],
+    #                      [mIsotropic[f][2,2]],
+    #                      [mIsotropic[f][3,3]],
+    #                      [mIsotropic[f][4,4]],
+    #                      [mIsotropic[f][5,5]]]
+       
+    # FName = Path(__file__).parent / 'Plots/Elasticity_IsoRUS.png'
+    # Parameters, R2adj, NE = OLS2(np.log(X), np.log(Y/1E3), FName=str(FName))
+
+    # TransverseNorm = Tensor.Norm(mTransverse)
+    # IsotropicNorm = Tensor.Norm(mIsotropic)
+    # mIsotropic / IsotropicNorm * TransverseNorm
 
     # # Get Experiment RUS results
     # Octant = 'L' if '2L' in Sample else 'M'
