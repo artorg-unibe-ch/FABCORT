@@ -34,6 +34,7 @@
 \usepackage{caption}
 \usepackage{array}
 \usepackage{pgffor}
+\usepackage{tabularx}
 \captionsetup{skip=0pt,belowskip=0pt}
 
 
@@ -277,6 +278,13 @@
 	\end{frame}
 
 	\begin{frame}
+		\frametitle{Material Effect}
+		\vfill
+		\includegraphics[width=\linewidth]{04_MaterialEffect/Material}\\
+		\vfill
+	\end{frame}
+
+	\begin{frame}
 		\frametitle{Homogenization}
 
 		\begin{columns}
@@ -298,7 +306,44 @@
 
 		\end{columns}
 	\end{frame}
+
+	\begin{frame}
+		\frametitle{Homogenization - Comparison with RUS}
+		\vfill
+		\hfill \includegraphics[width=0.4\linewidth]{05_Homogenization/Plots/Elasticity_IsoRUS}
+		\hfill \includegraphics[width=0.4\linewidth]{05_Homogenization/Plots/Elasticity_TraRUS}
+		\hfill\\
+		\hfill Isotropic Material \hfill Transverse Isotropic Material \hfill\\
+		\vfill
+	\end{frame}
 		
+	\begin{frame}
+		\frametitle{Homogenization - Isotropic}
+
+		\begin{columns}
+			\column{0.5\linewidth}
+			Setup
+			\begin{itemize}
+				\item Fabric at original resolution
+				\item BV/TV at original resolution
+				\item Isotropic material
+				\item Mean $\mathbb{S}$ / Sample
+			\end{itemize}
+			\vspace{5mm}
+			Parameters:
+			\resizebox{\linewidth}{!}{%
+			\begin{tabular}{ccccc}
+				$\lambda_0$ & $\lambda_0'$ & $\mu_0$ & $k$ & $l$\\
+				3132 & 4944 & 4944 & 1.978 & 0.121 \\
+			\end{tabular}}
+
+			\column{0.4\linewidth}
+			\vfill
+			\includegraphics[width=\linewidth, trim=75 0 0 0]{05_Homogenization/Plots/FabricElasticity_Iso}\\
+			\vfill
+
+		\end{columns}
+	\end{frame}
 	%----------------------------------------------------------------
 	%----------------------------------------------------------------
 	%----------------------------------------------------------------
