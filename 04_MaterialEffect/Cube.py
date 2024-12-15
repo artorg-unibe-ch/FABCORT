@@ -184,7 +184,7 @@ def PlotStiffnessROI(ROI:np.array, StiffnessTensor:np.array, FileName:Path) -> N
 
 def Main():
 
-    DataPath = Path(__file__).parents[1] / 'Tests'
+    DataPath = Path(__file__).parent
     Strain = np.array([0.001, 0.001, 0.001, 0.002, 0.002, 0.002])
 
     # Get fabric info
@@ -216,45 +216,21 @@ def Main():
             FabStiffness[i,j] = FabStress[i,j] / Strain[i]
 
     # Transform fabric stiffness into fabric coordinate system
-    Stiffness = 1/2 * (FabStiffness + FabStiffness.T)
+    IsoStiffness = 1/2 * (IsoStiffness + IsoStiffness.T)
+    TransStiffness = 1/2 * (TransStiffness + TransStiffness.T)
+    FabStiffness = 1/2 * (FabStiffness + FabStiffness.T)
 
-    # Write tensor into mandel notation
-    Mandel = Tensor.Engineering2MandelNotation(Stiffness)
+    # Build 3x3x3x3 tensor
+    IsoStiffness = Tensor.IsoMorphism66_3333(IsoStiffness)
+    TransStiffness = Tensor.IsoMorphism66_3333(TransStiffness)
+    FabStiffness = Tensor.IsoMorphism66_3333(FabStiffness)
 
-    # Step 3: Transform tensor into fabric coordinate system
-    I = np.eye(3)
-    Q = np.array(eVectors)
-    Transformed = Tensor.Transform(Mandel, I, Q)
+    # Plot
+    FName = str(Path(__file__).parent / 'FI_Stiffness.png')
+    Tensor.PlotTensor(IsoStiffness/1E3, FileName=FName)
 
-    # Project onto orthotropy
-    Orthotropic = np.zeros(Transformed.shape)
-    for i in range(Orthotropic.shape[0]):
-        for j in range(Orthotropic.shape[1]):
-            if i < 3 and j < 3:
-                Orthotropic[i, j] = Transformed[i, j]
-            elif i == j:
-                Orthotropic[i, j] = Transformed[i, j]
-
-    # Get tensor back to engineering notation
-    Stiffness = Tensor.Mandel2EngineeringNotation(Orthotropic)
-
-    # Print results
-    print('\nStiffness matrix of isotropic material')
-    print(IsoStiffness)
-
-    print('\nStiffness matrix of transverse isotropic material')
-    print(TransStiffness)
-
-    print('\nStiffness matrix of transverse isotropic material in fabric coordinate system')
-    print(Stiffness)
-
-    E = 0.001
-    Nu = 0.3
-    np.matmul(IsoStiffness, np.array([E, -E*Nu, -E*Nu, 0, 0, 0,]))
-
-    E = 0.001
-    np.matmul(TransStiffness, np.array([E, -E*0.2, -E*0.3, 0, 0, 0,]))
-
+    FName = str(Path(__file__).parent / 'FT_Stiffness.png')
+    Tensor.PlotTensor(TransStiffness/1E3, FileName=FName)
 
 if __name__ == '__main__':
     # Initiate the parser with a description
@@ -263,10 +239,7 @@ if __name__ == '__main__':
     # Add optional argument
     ScriptVersion = Parser.prog + ' version ' + __version__
     Parser.add_argument('-v', '--Version', help='Show script version', action='version', version=ScriptVersion)
-    Parser.add_argument('--Sample', help='Sample main file name', type=str)
-    Parser.add_argument('--OutputPath', help='Output path for the ROI and png image of the plot', default=Path(__file__).parents[1] / '02_Results/Scans')
-    Parser.add_argument('--NROIs', help='Number of region of interests to extract', type=int, default=3)
 
     # Read arguments from the command line
     Arguments = Parser.parse_args()
-    Main(Arguments)
+    Main()
