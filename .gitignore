@@ -13,7 +13,5 @@
 *Cai2019.pdf
 *Fan2021.pdf
 
-# Ignore medtool files
-*.out
-*.fab
+# Ignore medtool backup file
 *.bak
