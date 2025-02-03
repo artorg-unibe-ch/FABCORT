@@ -215,10 +215,25 @@ def Main():
             TransStiffness[i,j] = TransStress[i,j] / Strain[i]
             FabStiffness[i,j] = FabStress[i,j] / Strain[i]
 
-    # Transform fabric stiffness into fabric coordinate system
+    # Symetrize matrices
     IsoStiffness = 1/2 * (IsoStiffness + IsoStiffness.T)
     TransStiffness = 1/2 * (TransStiffness + TransStiffness.T)
     FabStiffness = 1/2 * (FabStiffness + FabStiffness.T)
+
+    # Compute material parameters
+    Material = open(DataPath / 'Material_Transverse.inp', 'r').readlines()
+    Material = Material[-4][:-1] + ', ' + Material[-3][:-1]
+    Material = [float(M) for M in Material.split(', ')]
+    E1, E2, E3 = Material[0], Material[1], Material[2]
+    Nu23, Nu31, Nu12 = Material[3], Material[4], Material[5]
+    Mu23, Mu31, Mu12 = Material[8], Material[7], Material[6]
+    S = np.array([[1/E1, -Nu23/E1, -Nu31/E1, 0, 0, 0],
+                  [-Nu23/E1, 1/E2, -Nu12/E2, 0, 0, 0],
+                  [-Nu31/E1, -Nu12/E2, 1/E3, 0, 0, 0],
+                  [0, 0, 0, 1/Mu23, 0, 0],
+                  [0, 0, 0, 0, 1/Mu31, 0],
+                  [0, 0, 0, 0, 0, 1/Mu12]])
+    C = np.linalg.inv(S)
 
     # Build 3x3x3x3 tensor
     IsoStiffness = Tensor.IsoMorphism66_3333(IsoStiffness)
@@ -232,6 +247,7 @@ def Main():
     FName = str(Path(__file__).parent / 'FT_Stiffness.png')
     Tensor.PlotTensor(TransStiffness/1E3, FileName=FName)
 
+
 if __name__ == '__main__':
     # Initiate the parser with a description
     Parser = argparse.ArgumentParser(description=Description, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -243,3 +259,5 @@ if __name__ == '__main__':
     # Read arguments from the command line
     Arguments = Parser.parse_args()
     Main()
+
+#%%

@@ -509,6 +509,46 @@ def BoxPlot(ArraysList:list, Labels=['', 'Y'], SetsLabels=None,
 
     return
 
+def PlotHistogram(Variable, Name):
+
+    # 04 Get data attributes
+    SortedValues = np.sort(Variable).astype(float)
+    N = len(Variable)
+    X_Bar = np.mean(Variable)
+    S_X = np.std(Variable, ddof=1)
+    Q025 = np.quantile(Variable, 0.25)
+    Q075 = np.quantile(Variable, 0.75)
+
+    Histogram, Edges = np.histogram(Variable, bins=20)
+    Width = (Edges[1] - Edges[0])
+    Center = (Edges[:-1] + Edges[1:]) / 2
+
+    # 05 Kernel density estimation (Gaussian kernel)
+    KernelEstimator = np.zeros(N)
+    NormalIQR = np.sum(np.abs(norm.ppf(np.array([0.25,0.75]), 0, 1)))
+    DataIQR = np.abs(Q075) - np.abs(Q025)
+    KernelHalfWidth = 0.9*N**(-1/5) * min(S_X,DataIQR/NormalIQR)
+    for Value in SortedValues:
+        KernelEstimator += norm.pdf(SortedValues-Value,0,KernelHalfWidth*2)
+    KernelEstimator = KernelEstimator/N
+
+    ## Histogram and density distribution
+    TheoreticalDistribution = norm.pdf(SortedValues,X_Bar,S_X)
+    
+    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=100)
+    Axes.fill_between(SortedValues,np.zeros(len(SortedValues)), KernelEstimator,color=(0.85,0.85,0.85),label='Kernel Density')
+    Axes.bar(Center, Histogram, align='center', width=Width,edgecolor=(0,0,0),color=(1,1,1,0),label='Histogram')
+    Axes.plot(SortedValues,TheoreticalDistribution,color=(1,0,0),label='Normal Distribution')
+    Axes.annotate(r'Mean $\pm$ SD : ' + str(round(X_Bar,3)) + r' $\pm$ ' + str(round(S_X,3)), xy=(0.3, 1.035), xycoords='axes fraction')
+    plt.xlabel(Name)
+    plt.ylabel('Density (-)')
+    plt.legend(loc='upper center',ncol=3,bbox_to_anchor=(0.5,1.2), prop={'size':10})
+    # plt.savefig(os.path.join(ResultFolder,Folder, Group + '_DensityDistribution.png'))
+    plt.show()
+    # plt.close(Figure)
+
+    return
+
 
 #%% Main
 
@@ -602,6 +642,27 @@ def Main():
     # Get average stiffness tensor per sample
     mIsotropic = np.mean(Isotropic, axis=1)
     mTransverse = np.mean(Transverse, axis=1)
+
+    # Plot anisotropy vs BVTV
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(BVTV, [F[2] / F[0] for F in Fabric], label='$m_3 / m_1$',
+              linestyle='none', marker='o', color=(0,0,0))
+    Axis.plot(BVTV, [F[2,2] / F[0,0] for F in mIsotropic], label='Isotropic $E_{33} / E_{11}$',
+              linestyle='none', marker='o', color=(1,0,0))
+    Axis.plot(BVTV, [F[2,2] / F[0,0] for F in mTransverse], label='Transverse $E_{33} / E_{11}$',
+              linestyle='none', marker='o', color=(0,0,1))
+    Axis.plot(BVTV, [F[2,2] / F[0,0] for F in RUS], label='RUS $E_{33} / E_{11}$',
+              linestyle='none', marker='o', color=(1,0,1))
+    Axis.set_xlabel('BV/TV (-)')
+    Axis.set_ylabel('Anisotropy')
+    plt.legend()
+    plt.show(Figure)
+
+    PlotHistogram(BVTV,'Test')
+    PlotHistogram(Fabric[:,0],'Test')
+    PlotHistogram(Fabric[:,1],'Test')
+    PlotHistogram(Fabric[:,2],'Test')
+    PlotHistogram(Fabric[:,2] / Fabric[:,0],'Test')
 
     # Fit homogenization with theorical model
     X = np.matrix(np.zeros((len(cFolders)*12, 5)))
