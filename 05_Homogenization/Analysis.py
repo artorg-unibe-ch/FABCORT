@@ -24,7 +24,7 @@ from scipy.stats import ttest_rel, ttest_ind
 from scipy.stats.distributions import norm, t
 
 sys.path.append(str(Path(__file__).parents[1]))
-from Utils import Time, Read, Image, Tensor
+from Utils import Read
 
 #%% Functions
 
@@ -401,6 +401,51 @@ def Compare_l(X, Y, k, Alpha=0.95):
 
     return Parameters, R2adj, NE
 
+def Compare_kl(X, Y, Lambda0, Lambda0p, Mu0, Alpha=0.95):
+
+    # Solve linear system
+    XTXi = np.linalg.inv(X.T * X)
+    B = XTXi * X.T * Y
+
+    # Compute residuals, variance, and covariance matrix
+    Y_Obs = np.exp(Y)
+    Y_Fit = np.exp(X * B)
+    Residuals = Y - X*B
+    DOFs = len(Y) - X.shape[1]
+    Sigma = Residuals.T * Residuals / DOFs
+    Cov = Sigma[0,0] * XTXi
+
+    # Compute B confidence interval
+    t_Alpha = t.interval(Alpha, DOFs)
+    B_CI_Low = B.T + t_Alpha[0] * np.sqrt(np.diag(Cov))
+    B_CI_Top = B.T + t_Alpha[1] * np.sqrt(np.diag(Cov))
+
+    # Store parameters in data frame
+    Parameters = pd.DataFrame(columns=['Lambda0','Lambda0p','Mu0','k','l'])
+    Parameters.loc['Value'] = [Lambda0, Lambda0p, Mu0, B[0,0], B[1,0]]
+    Parameters.loc['95% CI Low'] = [Lambda0, Lambda0p, Mu0, B_CI_Low[0,0], B_CI_Low[0,1]]
+    Parameters.loc['95% CI Top'] = [Lambda0, Lambda0p, Mu0, B_CI_Top[0,0], B_CI_Top[0,1]]
+
+    # Compute R2 and standard error of the estimate
+    RSS = np.sum([R**2 for R in Residuals])
+    SE = np.sqrt(RSS / DOFs)
+    TSS = np.sum([R**2 for R in (Y - Y.mean())])
+    RegSS = TSS - RSS
+    R2 = RegSS / TSS
+
+    # Compute R2adj and NE
+    R2adj = 1 - RSS/TSS * (len(Y)-1)/(len(Y)-X.shape[1]-1)
+
+    NE = []
+    for i in range(0,len(Y),12):
+        T_Obs = Y_Obs[i:i+12]
+        T_Fit = Y_Fit[i:i+12]
+        Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
+        Denominator = np.sum([T**2 for T in T_Obs])
+        NE.append(np.sqrt(Numerator/Denominator))
+    NE = np.array(NE)
+
+    return Parameters, R2adj, NE
 
 
 def BoxPlot(ArraysList:list, Labels=['', 'Y'], SetsLabels=None,
@@ -643,6 +688,69 @@ def Main():
     mIsotropic = np.mean(Isotropic, axis=1)
     mTransverse = np.mean(Transverse, axis=1)
 
+    BoxPlot([[F[0] for F in Fabric], [F[1] for F in Fabric], [F[2] for F in Fabric]])
+
+
+    # Isotropic model constants
+    E, Nu = 1E4, 0.3
+    Mu = E / (2 * (1 + Nu))
+    S = np.array([[1/E, -Nu/E, -Nu/E, 0, 0, 0],
+                  [-Nu/E, 1/E, -Nu/E, 0, 0, 0],
+                  [-Nu/E, -Nu/E, 1/E, 0, 0, 0],
+                  [0, 0, 0, 1/Mu, 0, 0],
+                  [0, 0, 0, 0, 1/Mu, 0],
+                  [0, 0, 0, 0, 0, 1/Mu]])
+    C = np.linalg.inv(S)
+
+    Mu0 = C[5,5]
+    Lambda0 = C[0,0] - 2*Mu0
+    Lambda0p = C[1,0]
+
+    # Fit homogenization with theorical model
+    X = np.matrix(np.zeros((len(cFolders)*12, 5)))
+    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
+    for f in range(len(cFolders)):
+        
+        Start, Stop = 12*f, 12*(f+1)
+        m1, m2, m3 = Fabric[f]
+
+        # Build system and enforce k = 1
+        X[Start:Stop] = np.array([[1, 0, 0, np.log(BVTV[f]), np.log(m1 ** 2)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m1 * m2)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m1 * m3)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m2 * m1)],
+                                  [1, 0, 0, np.log(BVTV[f]), np.log(m2 ** 2)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m2 * m3)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m3 * m1)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m3 * m2)],
+                                  [1, 0, 0, np.log(BVTV[f]), np.log(m3 ** 2)],
+                                  [0, 0, 1, np.log(BVTV[f]), np.log(m2 * m3)],
+                                  [0, 0, 1, np.log(BVTV[f]), np.log(m3 * m1)],
+                                  [0, 0, 1, np.log(BVTV[f]), np.log(m1 * m2)]])
+        
+        Y[Start:Stop] = [[mIsotropic[f][0,0]],
+                         [mIsotropic[f][0,1]],
+                         [mIsotropic[f][0,2]],
+                         [mIsotropic[f][1,0]],
+                         [mIsotropic[f][1,1]],
+                         [mIsotropic[f][1,2]],
+                         [mIsotropic[f][2,0]],
+                         [mIsotropic[f][2,1]],
+                         [mIsotropic[f][2,2]],
+                         [mIsotropic[f][3,3]],
+                         [mIsotropic[f][4,4]],
+                         [mIsotropic[f][5,5]]]
+    
+    Mask = np.array(X[:,3] > np.log(BVTV.mean())).ravel()
+    Y = np.log(Y) - np.log(Lambda0) * X[:,0] - np.log(Lambda0p) * X[:,1] - np.log(Mu0) * X[:,2]
+    X = X[:,3:]
+    Parameters, R2adj, NE = Compare_kl(X[Mask], Y[Mask], Lambda0, Lambda0p, Mu0)
+    Parameters, R2adj, NE = Compare_kl(X[~Mask], Y[~Mask], Lambda0, Lambda0p, Mu0)
+
+
+
+
+
     # Plot anisotropy vs BVTV
     Figure, Axis = plt.subplots(1,1)
     Axis.plot(BVTV, [F[2] / F[0] for F in Fabric], label='$m_3 / m_1$',
@@ -654,14 +762,14 @@ def Main():
     Axis.plot(BVTV, [F[2,2] / F[0,0] for F in RUS], label='RUS $E_{33} / E_{11}$',
               linestyle='none', marker='o', color=(1,0,1))
     Axis.set_xlabel('BV/TV (-)')
-    Axis.set_ylabel('Anisotropy')
+    Axis.set_ylabel('Degree of Anisotropy (-)')
     plt.legend()
     plt.show(Figure)
 
-    PlotHistogram(BVTV,'Test')
-    PlotHistogram(Fabric[:,0],'Test')
-    PlotHistogram(Fabric[:,1],'Test')
-    PlotHistogram(Fabric[:,2],'Test')
+    PlotHistogram(BVTV/BVTV.mean(),'Test')
+    PlotHistogram(Fabric[:,0]/Fabric[:,0].mean(),'Test')
+    PlotHistogram(Fabric[:,1]/Fabric[:,1].mean(),'Test')
+    PlotHistogram(Fabric[:,2]/Fabric[:,2].mean(),'Test')
     PlotHistogram(Fabric[:,2] / Fabric[:,0],'Test')
 
     # Fit homogenization with theorical model
@@ -699,8 +807,10 @@ def Main():
                          [mIsotropic[f][4,4]],
                          [mIsotropic[f][5,5]]]
     
+    Mask = np.array(X[:,3] > np.log(BVTV.mean())).ravel()
     FName = Path(__file__).parent / 'Plots/Regression_Iso.png'
-    Parameters, R2adj, NE = Homogenization_OLS(X, np.log(Y), FName=str(FName))
+    Parameters, R2adj, NE = Homogenization_OLS(X[Mask], np.log(Y)[Mask], FName=str(FName))
+    Parameters, R2adj, NE = Homogenization_OLS(X[~Mask], np.log(Y)[~Mask], FName=str(FName))
 
     Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
     for f in range(len(cFolders)):
@@ -721,7 +831,8 @@ def Main():
                          [mTransverse[f][5,5]]]
         
     FName = Path(__file__).parent / 'Plots/Regression_Tra.png'
-    Parameters, R2adj, NE = Homogenization_OLS(X, np.log(Y), FName=str(FName))
+    Parameters, R2adj, NE = Homogenization_OLS(X[Mask], np.log(Y)[Mask], FName=str(FName))
+    Parameters, R2adj, NE = Homogenization_OLS(X[~Mask], np.log(Y)[~Mask], FName=str(FName))
 
     # Compare isotropic versus transverse isotropic material
     for f in range(len(cFolders)):

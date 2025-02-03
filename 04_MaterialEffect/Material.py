@@ -33,8 +33,8 @@ def Main(E=10000, Nu=0.3, DA=2.0):
     # Build isotropic stiffness tensor
     Si = Tensor.Isotropic(E, Nu)
 
-    # Compute transverse isotropic constants for same norm
-    E1, E2, E3 = E/DA**0.5, E/DA**0.5, E*DA**0.5
+    # Compute transverse isotropic constants for given DA
+    E1, E2, E3 = E/DA, E/DA, E
     Nu23, Nu31, Nu12 = Nu, Nu, Nu
     Mu23 = E1 / (2*(1+Nu23))
     Mu31 = E2 / (2*(1+Nu31))
