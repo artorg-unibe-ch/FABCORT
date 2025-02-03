@@ -128,7 +128,7 @@
 \author[mathieu.simon@unibe.ch]{\tiny{\bf{Mathieu Simon}}}
 
 \medskip
-\date{December, 2024}
+\date{January, 2025}
 
 \begin{document}
 	
@@ -306,8 +306,46 @@
 
 		\end{columns}
 	\end{frame}
+
 	\begin{frame}
-		\frametitle{Homogenization - Anisotropy}
+		\frametitle{Homogenization Results}
+		\centering
+		\begin{columns}
+			\column{0.33\linewidth}
+			\centering
+			\includegraphics[width=\linewidth]{05_Homogenization/Plots/Regression_Iso}\\
+			Isotropic
+			\column{0.33\linewidth}
+			\centering
+			\includegraphics[width=\linewidth]{05_Homogenization/Plots/Regression_Tra}\\
+			Transverse
+			\column{0.33\linewidth}
+			\centering
+			\includegraphics[width=\linewidth]{05_Homogenization/Plots/Regression_IsoVsTra}\\
+			Comparison
+		\end{columns}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Comparison with Trabecular Bone}
+		\centering
+		$\mathbb{S}_{Ts} = \mathbb{S}_{T} / |\mathbb{S}_{T}| * |\mathbb{S}_{I}|$
+		\begin{table}
+			\resizebox{\textwidth}{!}{%
+			\begin{tabular}{l|cc|ccccc|c}
+				Study & Bone type & Resolution & $\lambda_0$ & $\lambda_0$' & $\mu_0$ & k & l & DA \\
+				\hline
+				Gross et al. & Trab. & 18 & 4609 & 3692 & 3738 & 1.60 & 0.99 & 1.67 \\
+				Panyasantisuk et al. & Trab. & 36 & 3841 & 3076 & 3115 & 1.60 & 0.99 & 1.54 \\
+				Simon et al & Trab. & 61 & 2738 & 1662 & 2187 & 1.60 & 0.99 & 1.99 \\
+				Present study & Cort. ($\mathbb{S}_{I}$) & 13 & 4882 & 4809 & 3645 & 1.60 & 0.99 & 2.02 \\
+				Present study & Cort. ($\mathbb{S}_{Ts}$) & 13 & 6309 & 6278 & 1194 & 1.60 & 0.99 & 2.02 \\
+			\end{tabular}}
+		\end{table}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Anisotropy}
 		\vfill
 		\begin{columns}
 			\column{0.5\linewidth}
@@ -324,41 +362,34 @@
 
 	\begin{frame}
 		\frametitle{Homogenization - Comparison with RUS}
-		\vfill
-		\hfill \includegraphics[width=0.4\linewidth]{05_Homogenization/Plots/Elasticity_IsoRUS}
-		\hfill \includegraphics[width=0.4\linewidth]{05_Homogenization/Plots/Elasticity_TraRUS}
-		\hfill\\
-		\hfill Isotropic Material \hfill Transverse Isotropic Material \hfill\\
-		\vfill
-	\end{frame}
-		
-	\begin{frame}
-		\frametitle{Homogenization - Isotropic}
-
+		\centering
 		\begin{columns}
-			\column{0.5\linewidth}
-			Setup
-			\begin{itemize}
-				\item Fabric at original resolution
-				\item BV/TV at original resolution
-				\item Isotropic material
-				\item Mean $\mathbb{S}$ / Sample
-			\end{itemize}
-			\vspace{5mm}
-			Parameters:
-			\resizebox{\linewidth}{!}{%
-			\begin{tabular}{ccccc}
-				$\lambda_0$ & $\lambda_0'$ & $\mu_0$ & $k$ & $l$\\
-				3132 & 4944 & 4944 & 1.978 & 0.121 \\
-			\end{tabular}}
-
-			\column{0.4\linewidth}
-			\vfill
-			\includegraphics[width=\linewidth, trim=75 0 0 0]{05_Homogenization/Plots/FabricElasticity_Iso}\\
-			\vfill
-
+			\column{0.45\linewidth}
+			\centering
+			\includegraphics[width=\linewidth]{05_Homogenization/Plots/Elasticity_IsoRUS}\\
+			Isotropic Material
+			\column{0.45\linewidth}
+			\centering
+			\includegraphics[width=\linewidth]{05_Homogenization/Plots/Elasticity_TraRUS}\\
+			Transverse Isotropic Material
 		\end{columns}
 	\end{frame}
+
+	\begin{frame}
+		\frametitle{Comparison $l$ Exponent}
+		\centering
+		$\mathbb{S}_{Is} = \mathbb{S}_{I} / |\mathbb{S}_{I}| * |\mathbb{S}_{T}|$
+		\begin{table}
+			\resizebox{\textwidth}{!}{%
+			\begin{tabular}{l|ccccc}
+				Parameters  & $\lambda_0$ & $\lambda_0$' & $\mu_0$ & k & l \\
+				\hline
+				Isotropic & 21480 & 21156 & 16035 & 1 & 0.075 \\
+				Transverse & 27757 & 26935 & 5070 & 1 & 0.66 \\
+			\end{tabular}}
+		\end{table}
+	\end{frame}
+	
 	%----------------------------------------------------------------
 	%----------------------------------------------------------------
 	%----------------------------------------------------------------

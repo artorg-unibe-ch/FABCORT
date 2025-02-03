@@ -28,10 +28,74 @@ from Utils import Time, Read, Image, Tensor
 
 #%% Functions
 
+def Anisotropy(cFolders, RUS, mIsotropic, mTransverse, Fabric):
+    # Compute anisotropy
+    aRUS = np.zeros((len(cFolders),3))
+    aFab = np.zeros((len(cFolders),3))
+    aIso = np.zeros((len(cFolders),3))
+    aTra = np.zeros((len(cFolders),3))
+    for A, C in zip([aRUS, aIso, aTra],[RUS, mIsotropic, mTransverse]):
+        A[:,0] = C[:,1,1] / C[:,0,0]
+        A[:,1] = C[:,2,2] / C[:,1,1]
+        A[:,2] = C[:,2,2] / C[:,0,0]
+    aFab[:,0] = Fabric[:,1] / Fabric[:,0]
+    aFab[:,1] = Fabric[:,2] / Fabric[:,1]
+    aFab[:,2] = Fabric[:,2] / Fabric[:,0]
+
+    # Plot anisotropies
+    Colors = [(1,0,1),(1,0,0),(0,0,1),(0,0,0)]
+    Labels = ['Fabric','Isotropic','Transverse','Experiment']
+    FName = Path(__file__).parent / 'Plots/Anisotropy.png'
+    Figure, Axis = plt.subplots(1,1)
+    for c, C in enumerate([aFab, aIso, aTra, aRUS]):
+        Axis.plot(np.arange(3)+1, C[0], marker='o', color=Colors[c], label=Labels[c])
+        for A in C[1:]:
+            Axis.plot(np.arange(3)+1, A, marker='o', color=Colors[c])
+    Axis.set_xticks(np.arange(3)+1)
+    Axis.set_xticklabels(['$e_2$/$e_1$', '$e_3$/$e_2$', '$e_3$/$e_1$'])
+    Axis.set_xlabel('Directions')
+    Axis.set_ylabel('Anisotropy')
+    plt.legend()
+    plt.savefig(FName)
+    plt.close(Figure)
+
+    # Investigate anisotropy ratios
+    F_DA = np.zeros(len(cFolders))
+    I_DA = np.zeros(len(cFolders))
+    T_DA = np.zeros(len(cFolders))
+    E_DA = np.zeros(len(cFolders))
+    FName = Path(__file__).parent / 'Plots/AnisotropyRatios.png'
+    for f in range(len(cFolders)):
+        F_DA[f] = Fabric[f][2] / Fabric[f][0]
+        I_DA[f] = mIsotropic[f][2,2] / mIsotropic[f][0,0]
+        T_DA[f] = mTransverse[f][2,2] / mTransverse[f][0,0]
+        E_DA[f] = RUS[f][2,2] / RUS[f][0,0]
+
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(F_DA, I_DA/F_DA, color=(1,0,0), linestyle='none', marker='o', label='Isotropic')
+    Axis.plot(F_DA, T_DA/F_DA, color=(0,0,1), linestyle='none', marker='o', label='Transverse')
+    Axis.plot(F_DA, E_DA/F_DA, color=(0,0,0), linestyle='none', marker='o', label='Experiment')
+    Axis.set_xlabel('Structural DA (-)')
+    Axis.set_ylabel('DA Ratio (structural / mechanics) (-)')
+    plt.legend()
+    plt.savefig(FName)
+    plt.show(Figure)
+
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(E_DA[E_DA < 2], I_DA[E_DA < 2], color=(1,0,0), linestyle='none', marker='o', label='Isotropic')
+    Axis.plot(E_DA[E_DA < 2], T_DA[E_DA < 2], color=(0,0,1), linestyle='none', marker='o', label='Transverse')
+    Axis.set_xlabel('Experiment DA (-)')
+    Axis.set_ylabel('Simulation DA (-)')
+    plt.legend()
+    # plt.savefig(FName)
+    plt.show(Figure)
+
+    return
+
 def Fit(x, a, b):
     return a * np.exp(-b * x)
 
-def OLS(X, Y, Alpha=0.95, FName=''):
+def Homogenization_OLS(X, Y, Alpha=0.95, FName=''):
 
     # Solve linear system
     XTXi = np.linalg.inv(X.T * X)
@@ -85,8 +149,8 @@ def OLS(X, Y, Alpha=0.95, FName=''):
 
     # Plots
     DPI = 500
-    SMax = max([Y_Obs.max(), Y_Fit.max()]) * 5
-    SMin = min([Y_Obs.min(), Y_Fit.min()]) / 5
+    # SMax = max([Y_Obs.max(), Y_Fit.max()]) * 5
+    # SMin = min([Y_Obs.min(), Y_Fit.min()]) / 5
     Colors=[(0,0,1),(0,1,0),(1,0,0)]
 
     Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
@@ -107,8 +171,8 @@ def OLS(X, Y, Alpha=0.95, FName=''):
     Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
     Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
     Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
-    Axes.set_xlim([SMin, SMax])
-    Axes.set_ylim([SMin, SMax])
+    # Axes.set_xlim([SMin, SMax])
+    # Axes.set_ylim([SMin, SMax])
     plt.xscale('log')
     plt.yscale('log')
     plt.legend(loc='upper left')
@@ -119,7 +183,88 @@ def OLS(X, Y, Alpha=0.95, FName=''):
 
     return Parameters, R2adj, NE
 
-def OLS2(X, Y, Alpha=0.95, FName=''):
+def MaterialComparison(X, Y, FName=''):
+
+    # Plots
+    DPI = 500
+    Colors=[(0,0,1),(0,1,0),(1,0,0)]
+
+    # Elements
+    Step = 12
+    ii = np.tile([1,0,0,0,1,0,0,0,1,0,0,0],len(X)//Step).astype(bool)
+    ij = np.tile([0,1,1,1,0,1,1,1,0,0,0,0],len(X)//Step).astype(bool)
+    jj = np.tile([0,0,0,0,0,0,0,0,0,1,1,1],len(X)//Step).astype(bool)
+
+    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
+    # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
+    Axes.plot(X[ii, 0], Y[ii],
+              color=Colors[0], linestyle='none', marker='s')
+    Axes.plot(X[ij, 0], Y[ij],
+              color=Colors[1], linestyle='none', marker='o')
+    Axes.plot(X[jj, 0], Y[jj],
+              color=Colors[2], linestyle='none', marker='^')
+    Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
+    Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
+    Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
+    Axes.set_xlabel('Isotropic Material $\mathrm{\mathbb{S}}$ (MPa)')
+    Axes.set_ylabel('Transverse Isotropic Material $\mathrm{\mathbb{S}}$ (MPa)')
+    # plt.xscale('log')
+    # plt.yscale('log')
+    plt.legend(loc='upper left')
+    plt.subplots_adjust(left=0.15, bottom=0.15)
+    if len(FName) > 0:
+        plt.savefig(FName)
+    plt.close(Figure)
+
+    return
+
+def Homogenization_OLS_kl(X, Y, k, l, Alpha=0.95):
+
+    # Solve linear system
+    XTXi = np.linalg.inv(X.T * X)
+    B = XTXi * X.T * Y
+
+    # Compute residuals, variance, and covariance matrix
+    Y_Obs = np.exp(Y)
+    Y_Fit = np.exp(X * B)
+    Residuals = Y - X*B
+    DOFs = len(Y) - X.shape[1]
+    Sigma = Residuals.T * Residuals / DOFs
+    Cov = Sigma[0,0] * XTXi
+
+    # Compute B confidence interval
+    t_Alpha = t.interval(Alpha, DOFs)
+    B_CI_Low = B.T + t_Alpha[0] * np.sqrt(np.diag(Cov))
+    B_CI_Top = B.T + t_Alpha[1] * np.sqrt(np.diag(Cov))
+
+    # Store parameters in data frame
+    Parameters = pd.DataFrame(columns=['Lambda0','Lambda0p','Mu0','k','l'])
+    Parameters.loc['Value'] = [np.exp(B[0,0]) - 2*np.exp(B[2,0]), np.exp(B[1,0]), np.exp(B[2,0]), k, l]
+    Parameters.loc['95% CI Low'] = [np.exp(B_CI_Low[0,0]) - 2*np.exp(B_CI_Top[0,2]), np.exp(B_CI_Low[0,1]), np.exp(B_CI_Low[0,2]), k, l]
+    Parameters.loc['95% CI Top'] = [np.exp(B_CI_Top[0,0]) - 2*np.exp(B_CI_Low[0,2]), np.exp(B_CI_Top[0,1]), np.exp(B_CI_Top[0,2]), k, l]
+
+    # Compute R2 and standard error of the estimate
+    RSS = np.sum([R**2 for R in Residuals])
+    SE = np.sqrt(RSS / DOFs)
+    TSS = np.sum([R**2 for R in (Y - Y.mean())])
+    RegSS = TSS - RSS
+    R2 = RegSS / TSS
+
+    # Compute R2adj and NE
+    R2adj = 1 - RSS/TSS * (len(Y)-1)/(len(Y)-X.shape[1]-1)
+
+    NE = []
+    for i in range(0,len(Y),12):
+        T_Obs = Y_Obs[i:i+12]
+        T_Fit = Y_Fit[i:i+12]
+        Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
+        Denominator = np.sum([T**2 for T in T_Obs])
+        NE.append(np.sqrt(Numerator/Denominator))
+    NE = np.array(NE)
+
+    return Parameters, R2adj, NE
+
+def ExperivementVsSimulation_OLS(X, Y, Alpha=0.95, FName=''):
 
     # Solve linear system
     XTXi = np.linalg.inv(X.T * X)
@@ -127,7 +272,7 @@ def OLS2(X, Y, Alpha=0.95, FName=''):
 
     # Compute residuals, variance, and covariance matrix
     Y_Obs = Y
-    Y_Fit = X * B
+    Y_Fit = np.array(X * B).ravel()
     Residuals = Y - X*B
     DOFs = len(Y) - X.shape[1]
     Sigma = Residuals.T * Residuals / DOFs
@@ -157,8 +302,8 @@ def OLS2(X, Y, Alpha=0.95, FName=''):
     NE = []
     Step = 12
     for i in range(0,len(Y),Step):
-        T_Obs = np.exp(X[i:i+Step])
-        T_Fit = np.exp(Y[i:i+Step])
+        T_Obs = X[i:i+Step]
+        T_Fit = Y[i:i+Step]
         Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
         Denominator = np.sum([T**2 for T in T_Obs])
         NE.append(np.sqrt(Numerator/Denominator))
@@ -168,9 +313,9 @@ def OLS2(X, Y, Alpha=0.95, FName=''):
     # Prepare data for plot
     Line = np.linspace(np.min(np.concatenate([X,Y])),
                        np.max(np.concatenate([X,Y])), len(Y))
-    # B_0 = np.sort(np.sqrt(np.diag(X * Cov * X.T)))
-    # CI_Line_u = np.exp(Line + t_Alpha[0] * B_0)
-    # CI_Line_o = np.exp(Line + t_Alpha[1] * B_0)
+    B_0 = np.sort(np.sqrt(np.diag(X * Cov * X.T)))
+    # CI_Line_u = (Y_Fit + t_Alpha[0]) * B_0
+    # CI_Line_o = (Y_Fit + t_Alpha[1]) * B_0
 
     # Plots
     DPI = 500
@@ -182,7 +327,7 @@ def OLS2(X, Y, Alpha=0.95, FName=''):
     jj = np.tile([0,0,0,0,0,0,0,0,0,1,1,1],len(X)//Step).astype(bool)
 
     Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
-    # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
+    # Axes.fill_between(np.array(X).ravel(), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
     Axes.plot(X[ii, 0], Y_Obs[ii],
               color=Colors[0], linestyle='none', marker='s')
     Axes.plot(X[ij, 0], Y_Obs[ij],
@@ -192,15 +337,16 @@ def OLS2(X, Y, Alpha=0.95, FName=''):
     Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
     Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
     Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
-    Axes.plot(Line, Line, color=(0, 0, 0), linestyle='--')
+    Axes.plot(Line, Line, color=(0.8, 0.8, 0.8), linestyle='--', linewidth=1)
+    Axes.plot(np.array(X).ravel(), Y_Fit, color=(0, 0, 0), linewidth=1)
     Axes.annotate(r'N ROIs   : ' + str(len(Y)//Step), xy=(0.3, 0.1), xycoords='axes fraction')
     Axes.annotate(r'N Points : ' + str(len(Y)), xy=(0.3, 0.025), xycoords='axes fraction')
     Axes.annotate(r'$R^2_{ajd}$: ' + format(round(R2adj, 3),'.3f'), xy=(0.65, 0.1), xycoords='axes fraction')
     Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
-    Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
-    Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
-    plt.xscale('log')
-    plt.yscale('log')
+    Axes.set_xlabel('RUS $\mathrm{\mathbb{S}}$ (MPa)')
+    Axes.set_ylabel('Simulation $\mathrm{\mathbb{S}}$ (MPa)')
+    # plt.xscale('log')
+    # plt.yscale('log')
     plt.legend(loc='upper left')
     plt.subplots_adjust(left=0.15, bottom=0.15)
     if len(FName) > 0:
@@ -209,7 +355,7 @@ def OLS2(X, Y, Alpha=0.95, FName=''):
 
     return Parameters, R2adj, NE
 
-def OLS3(X, Y, k, Alpha=0.95, FName=''):
+def Compare_l(X, Y, k, Alpha=0.95):
 
     # Solve linear system
     XTXi = np.linalg.inv(X.T * X)
@@ -253,137 +399,8 @@ def OLS3(X, Y, k, Alpha=0.95, FName=''):
         NE.append(np.sqrt(Numerator/Denominator))
     NE = np.array(NE)
 
-
-    # Prepare data for plot
-    Line = np.linspace(min(Y.min(), (X*B).min()),
-                       max(Y.max(), (X*B).max()), len(Y))
-    # B_0 = np.sort(np.sqrt(np.diag(X * Cov * X.T)))
-    # CI_Line_u = np.exp(Line + t_Alpha[0] * B_0)
-    # CI_Line_o = np.exp(Line + t_Alpha[1] * B_0)
-
-    # Plots
-    DPI = 500
-    SMax = max([Y_Obs.max(), Y_Fit.max()]) * 5
-    SMin = min([Y_Obs.min(), Y_Fit.min()]) / 5
-    Colors=[(0,0,1),(0,1,0),(1,0,0)]
-
-    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
-    # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
-    Axes.plot(Y_Obs[X[:, 0] == 1], Y_Fit[X[:, 0] == 1],
-              color=Colors[0], linestyle='none', marker='s')
-    Axes.plot(Y_Obs[X[:, 1] == 1], Y_Fit[X[:, 1] == 1],
-              color=Colors[1], linestyle='none', marker='o')
-    Axes.plot(Y_Obs[X[:, 2] == 1], Y_Fit[X[:, 2] == 1],
-              color=Colors[2], linestyle='none', marker='^')
-    Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
-    Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
-    Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
-    Axes.plot(np.exp(Line), np.exp(Line), color=(0, 0, 0), linestyle='--')
-    Axes.annotate(r'N ROIs   : ' + str(len(Y)//12), xy=(0.3, 0.1), xycoords='axes fraction')
-    Axes.annotate(r'N Points : ' + str(len(Y)), xy=(0.3, 0.025), xycoords='axes fraction')
-    Axes.annotate(r'$R^2_{ajd}$: ' + format(round(R2adj, 3),'.3f'), xy=(0.65, 0.1), xycoords='axes fraction')
-    Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
-    Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
-    Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
-    Axes.set_xlim([SMin, SMax])
-    Axes.set_ylim([SMin, SMax])
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.legend(loc='upper left')
-    plt.subplots_adjust(left=0.15, bottom=0.15)
-    if len(FName) > 0:
-        plt.savefig(FName)
-    plt.show()
-
     return Parameters, R2adj, NE
 
-def OLS4(X, Y, Alpha=0.95, FName=''):
-
-    # Solve linear system
-    XTXi = np.linalg.inv(X.T * X)
-    B = XTXi * X.T * Y
-
-    # Compute residuals, variance, and covariance matrix
-    Y_Obs = Y
-    Y_Fit = X * B
-    Residuals = Y - X*B
-    DOFs = len(Y) - X.shape[1]
-    Sigma = Residuals.T * Residuals / DOFs
-    Cov = Sigma[0,0] * XTXi
-
-    # Compute B confidence interval
-    t_Alpha = t.interval(Alpha, DOFs)
-    B_CI_Low = B.T + t_Alpha[0] * np.sqrt(np.diag(Cov))
-    B_CI_Top = B.T + t_Alpha[1] * np.sqrt(np.diag(Cov))
-
-    # Store parameters in data frame
-    Parameters = pd.DataFrame(columns=[f'Parameter {i+1}' for i in range(len(B))])
-    Parameters.loc['Value'] = [P[0] for P in np.array(B)]
-    Parameters.loc['95% CI Low'] = [P for P in np.array(B_CI_Low)[0]]
-    Parameters.loc['95% CI Top'] = [P for P in np.array(B_CI_Top)[0]]
-
-    # Compute R2 and standard error of the estimate
-    RSS = np.sum([R**2 for R in Residuals])
-    SE = np.sqrt(RSS / DOFs)
-    TSS = np.sum([R**2 for R in (Y - Y.mean())])
-    RegSS = TSS - RSS
-    R2 = RegSS / TSS
-
-    # Compute R2adj and NE
-    R2adj = 1 - RSS/TSS * (len(Y)-1)/(len(Y)-X.shape[1]-1)
-
-    NE = []
-    Step = 12
-    for i in range(0,len(Y),Step):
-        T_Obs = np.exp(X[i:i+Step])
-        T_Fit = np.exp(Y[i:i+Step])
-        Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
-        Denominator = np.sum([T**2 for T in T_Obs])
-        NE.append(np.sqrt(Numerator/Denominator))
-    NE = np.array(NE)
-
-
-    # Prepare data for plot
-    Line = np.linspace(np.min(np.concatenate([X,Y])),
-                       np.max(np.concatenate([X,Y])), len(Y))
-    # B_0 = np.sort(np.sqrt(np.diag(X * Cov * X.T)))
-    # CI_Line_u = np.exp(Line + t_Alpha[0] * B_0)
-    # CI_Line_o = np.exp(Line + t_Alpha[1] * B_0)
-
-    # Plots
-    DPI = 500
-    Colors=[(0,0,1),(0,1,0),(1,0,0)]
-
-    # Elements
-    ii = np.tile([1,0,0,0,1,0,0,0,1,0,0,0],len(X)//Step).astype(bool)
-    ij = np.tile([0,1,1,1,0,1,1,1,0,0,0,0],len(X)//Step).astype(bool)
-    jj = np.tile([0,0,0,0,0,0,0,0,0,1,1,1],len(X)//Step).astype(bool)
-
-    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
-    # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
-    Axes.plot(X[ii, 0], Y_Obs[ii],
-              color=Colors[0], linestyle='none', marker='s')
-    Axes.plot(X[ij, 0], Y_Obs[ij],
-              color=Colors[1], linestyle='none', marker='o')
-    Axes.plot(X[jj, 0], Y_Obs[jj],
-              color=Colors[2], linestyle='none', marker='^')
-    Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
-    Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
-    Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
-    Axes.plot(Line, Line, color=(0, 0, 0), linestyle='--')
-    Axes.annotate(r'N ROIs   : ' + str(len(Y)//Step), xy=(0.3, 0.1), xycoords='axes fraction')
-    Axes.annotate(r'N Points : ' + str(len(Y)), xy=(0.3, 0.025), xycoords='axes fraction')
-    Axes.annotate(r'$R^2_{ajd}$: ' + format(round(R2adj, 3),'.3f'), xy=(0.65, 0.1), xycoords='axes fraction')
-    Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
-    Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
-    Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
-    plt.legend(loc='upper left')
-    plt.subplots_adjust(left=0.15, bottom=0.15)
-    if len(FName) > 0:
-        plt.savefig(FName)
-    plt.close(Figure)
-
-    return Parameters, R2adj, NE
 
 
 def BoxPlot(ArraysList:list, Labels=['', 'Y'], SetsLabels=None,
@@ -586,66 +603,164 @@ def Main():
     mIsotropic = np.mean(Isotropic, axis=1)
     mTransverse = np.mean(Transverse, axis=1)
 
-    # Compute anisotropy
-    aRUS = np.zeros((len(cFolders),3))
-    aFab = np.zeros((len(cFolders),3))
-    aIso = np.zeros((len(cFolders),3))
-    aTra = np.zeros((len(cFolders),3))
-    for A, C in zip([aRUS, aIso, aTra],[RUS, mIsotropic, mTransverse]):
-        A[:,0] = C[:,1,1] / C[:,0,0]
-        A[:,1] = C[:,2,2] / C[:,1,1]
-        A[:,2] = C[:,2,2] / C[:,0,0]
-    aFab[:,0] = Fabric[:,1] / Fabric[:,0]
-    aFab[:,1] = Fabric[:,2] / Fabric[:,1]
-    aFab[:,2] = Fabric[:,2] / Fabric[:,0]
-
-    # Plot anisotropies
-    Colors = [(1,0,1),(1,0,0),(0,0,1),(0,0,0)]
-    Labels = ['Fabric','Isotropic','Transverse','Experiment']
-    FName = Path(__file__).parent / 'Plots/Anisotropy.png'
-    Figure, Axis = plt.subplots(1,1)
-    for c, C in enumerate([aFab, aIso, aTra, aRUS]):
-        Axis.plot(np.arange(3)+1, C[0], marker='o', color=Colors[c], label=Labels[c])
-        for A in C[1:]:
-            Axis.plot(np.arange(3)+1, A, marker='o', color=Colors[c])
-    Axis.set_xticks(np.arange(3)+1)
-    Axis.set_xticklabels(['$e_2$/$e_1$', '$e_3$/$e_2$', '$e_3$/$e_1$'])
-    Axis.set_xlabel('Directions')
-    Axis.set_ylabel('Anisotropy')
-    plt.legend()
-    plt.savefig(FName)
-    plt.close(Figure)
-
-    # Investigate anisotropy ratios
-    F_DA = np.zeros(len(cFolders))
-    I_DA = np.zeros(len(cFolders))
-    T_DA = np.zeros(len(cFolders))
-    E_DA = np.zeros(len(cFolders))
-    FName = Path(__file__).parent / 'Plots/AnisotropyRatios.png'
+    # Fit homogenization with theorical model
+    X = np.matrix(np.zeros((len(cFolders)*12, 5)))
+    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
     for f in range(len(cFolders)):
-        F_DA[f] = Fabric[f][2] / Fabric[f][0]
-        I_DA[f] = mIsotropic[f][2,2] / mIsotropic[f][0,0]
-        T_DA[f] = mTransverse[f][2,2] / mTransverse[f][0,0]
-        E_DA[f] = RUS[f][2,2] / RUS[f][0,0]
+        
+        Start, Stop = 12*f, 12*(f+1)
+        m1, m2, m3 = Fabric[f]
 
-    Figure, Axis = plt.subplots(1,1)
-    Axis.plot(F_DA, I_DA/F_DA, color=(1,0,0), linestyle='none', marker='o', label='Isotropic')
-    Axis.plot(F_DA, T_DA/F_DA, color=(0,0,1), linestyle='none', marker='o', label='Transverse')
-    Axis.plot(F_DA, E_DA/F_DA, color=(0,0,0), linestyle='none', marker='o', label='Experiment')
-    Axis.set_xlabel('Structural DA (-)')
-    Axis.set_ylabel('DA Ratio (structural / mechanics) (-)')
-    plt.legend()
-    plt.savefig(FName)
-    plt.show(Figure)
+        # Build system and enforce k = 1
+        X[Start:Stop] = np.array([[1, 0, 0, np.log(BVTV[f]), np.log(m1 ** 2)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m1 * m2)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m1 * m3)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m2 * m1)],
+                                  [1, 0, 0, np.log(BVTV[f]), np.log(m2 ** 2)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m2 * m3)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m3 * m1)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m3 * m2)],
+                                  [1, 0, 0, np.log(BVTV[f]), np.log(m3 ** 2)],
+                                  [0, 0, 1, np.log(BVTV[f]), np.log(m2 * m3)],
+                                  [0, 0, 1, np.log(BVTV[f]), np.log(m3 * m1)],
+                                  [0, 0, 1, np.log(BVTV[f]), np.log(m1 * m2)]])
+        
+        Y[Start:Stop] = [[mIsotropic[f][0,0]],
+                         [mIsotropic[f][0,1]],
+                         [mIsotropic[f][0,2]],
+                         [mIsotropic[f][1,0]],
+                         [mIsotropic[f][1,1]],
+                         [mIsotropic[f][1,2]],
+                         [mIsotropic[f][2,0]],
+                         [mIsotropic[f][2,1]],
+                         [mIsotropic[f][2,2]],
+                         [mIsotropic[f][3,3]],
+                         [mIsotropic[f][4,4]],
+                         [mIsotropic[f][5,5]]]
+    
+    FName = Path(__file__).parent / 'Plots/Regression_Iso.png'
+    Parameters, R2adj, NE = Homogenization_OLS(X, np.log(Y), FName=str(FName))
 
-    Figure, Axis = plt.subplots(1,1)
-    Axis.plot(E_DA[E_DA < 2], I_DA[E_DA < 2], color=(1,0,0), linestyle='none', marker='o', label='Isotropic')
-    Axis.plot(E_DA[E_DA < 2], T_DA[E_DA < 2], color=(0,0,1), linestyle='none', marker='o', label='Transverse')
-    Axis.set_xlabel('Experiment DA (-)')
-    Axis.set_ylabel('Simulation DA (-)')
-    plt.legend()
-    # plt.savefig(FName)
-    plt.show(Figure)
+    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
+    for f in range(len(cFolders)):
+        
+        Start, Stop = 12*f, 12*(f+1)
+
+        Y[Start:Stop] = [[mTransverse[f][0,0]],
+                         [mTransverse[f][0,1]],
+                         [mTransverse[f][0,2]],
+                         [mTransverse[f][1,0]],
+                         [mTransverse[f][1,1]],
+                         [mTransverse[f][1,2]],
+                         [mTransverse[f][2,0]],
+                         [mTransverse[f][2,1]],
+                         [mTransverse[f][2,2]],
+                         [mTransverse[f][3,3]],
+                         [mTransverse[f][4,4]],
+                         [mTransverse[f][5,5]]]
+        
+    FName = Path(__file__).parent / 'Plots/Regression_Tra.png'
+    Parameters, R2adj, NE = Homogenization_OLS(X, np.log(Y), FName=str(FName))
+
+    # Compare isotropic versus transverse isotropic material
+    for f in range(len(cFolders)):
+        Start, Stop = 12*f, 12*(f+1)
+        Y_Iso[Start:Stop] = [[mIsotropic[f][0,0]],
+                            [mIsotropic[f][0,1]],
+                            [mIsotropic[f][0,2]],
+                            [mIsotropic[f][1,0]],
+                            [mIsotropic[f][1,1]],
+                            [mIsotropic[f][1,2]],
+                            [mIsotropic[f][2,0]],
+                            [mIsotropic[f][2,1]],
+                            [mIsotropic[f][2,2]],
+                            [mIsotropic[f][3,3]],
+                            [mIsotropic[f][4,4]],
+                            [mIsotropic[f][5,5]]]
+        Y_Tra[Start:Stop] = [[mTransverse[f][0,0]],
+                            [mTransverse[f][0,1]],
+                            [mTransverse[f][0,2]],
+                            [mTransverse[f][1,0]],
+                            [mTransverse[f][1,1]],
+                            [mTransverse[f][1,2]],
+                            [mTransverse[f][2,0]],
+                            [mTransverse[f][2,1]],
+                            [mTransverse[f][2,2]],
+                            [mTransverse[f][3,3]],
+                            [mTransverse[f][4,4]],
+                            [mTransverse[f][5,5]]]
+
+    FName = Path(__file__).parent / 'Plots/Regression_IsoVsTra.png'
+    P, R2adj, NE = MaterialComparison(Y_Iso, Y_Tra, FName=str(FName))
+
+    # Compute norm of tensors
+    TransverseNorms = np.linalg.norm(mTransverse, axis=(1,2))
+    IsotropicNorms = np.linalg.norm(mIsotropic, axis=(1,2))
+    sIsotropic = mIsotropic * np.reshape((TransverseNorms / IsotropicNorms),(len(cFolders),1,1))
+    sTransverse = mTransverse * np.reshape((IsotropicNorms / TransverseNorms),(len(cFolders),1,1))
+
+    # Fix k and l for different study comparison
+    X = np.matrix(np.zeros((len(cFolders)*12, 5)))
+    Y_Iso = np.matrix(np.zeros((len(cFolders)*12, 1)))
+    Y_Tra = np.matrix(np.zeros((len(cFolders)*12, 1)))
+    k, l = 1.60, 0.99
+    for f in range(len(cFolders)):
+        
+        Start, Stop = 12*f, 12*(f+1)
+        m1, m2, m3 = tFabric[f]
+
+        # Normalize for det(M) = 1 and keep degree of anisotropy
+        DA = m3 / m1
+        m1 = (1/DA)**(1/3)
+        m2 = m1
+        m3 = DA * m1
+
+        # Build system and enforce
+        X[Start:Stop] = np.array([[1, 0, 0, np.log(BVTV[f]), np.log(m1 ** 2)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m1 * m2)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m1 * m3)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m2 * m1)],
+                                  [1, 0, 0, np.log(BVTV[f]), np.log(m2 ** 2)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m2 * m3)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m3 * m1)],
+                                  [0, 1, 0, np.log(BVTV[f]), np.log(m3 * m2)],
+                                  [1, 0, 0, np.log(BVTV[f]), np.log(m3 ** 2)],
+                                  [0, 0, 1, np.log(BVTV[f]), np.log(m2 * m3)],
+                                  [0, 0, 1, np.log(BVTV[f]), np.log(m3 * m1)],
+                                  [0, 0, 1, np.log(BVTV[f]), np.log(m1 * m2)]])
+        
+        Y_Iso[Start:Stop] = [[mIsotropic[f][0,0]],
+                            [mIsotropic[f][0,1]],
+                            [mIsotropic[f][0,2]],
+                            [mIsotropic[f][1,0]],
+                            [mIsotropic[f][1,1]],
+                            [mIsotropic[f][1,2]],
+                            [mIsotropic[f][2,0]],
+                            [mIsotropic[f][2,1]],
+                            [mIsotropic[f][2,2]],
+                            [mIsotropic[f][3,3]],
+                            [mIsotropic[f][4,4]],
+                            [mIsotropic[f][5,5]]]
+        
+        Y_Tra[Start:Stop] = [[sTransverse[f][0,0]],
+                            [sTransverse[f][0,1]],
+                            [sTransverse[f][0,2]],
+                            [sTransverse[f][1,0]],
+                            [sTransverse[f][1,1]],
+                            [sTransverse[f][1,2]],
+                            [sTransverse[f][2,0]],
+                            [sTransverse[f][2,1]],
+                            [sTransverse[f][2,2]],
+                            [sTransverse[f][3,3]],
+                            [sTransverse[f][4,4]],
+                            [sTransverse[f][5,5]]]
+    
+    # Enforce k and l
+    Y_Iso = np.log(Y_Iso) - X[:,3]*k - X[:,4]*l
+    Y_Tra = np.log(Y_Tra) - X[:,3]*k - X[:,4]*l
+    
+    P_Iso, R2adj, NE = Homogenization_OLS_kl(X[:,:3], Y_Iso, k, l)
+    P_Tra, R2adj, NE = Homogenization_OLS_kl(X[:,:3], Y_Tra, k, l)
 
     # Compute transverse fabric and error
     tFabric = np.zeros(Fabric.shape)
@@ -661,7 +776,10 @@ def Main():
     NE_Fab = np.array(NE_Fab)
     print(f'Norm error for transverse assumption: {round(np.mean(NE_Fab),3)*100}%')
 
-    # Build linear system
+    # Investigate anisotropy
+    Anisotropy(cFolders, RUS, mIsotropic, mTransverse, Fabric)
+
+    # Compare with RUS
     X = np.matrix(np.ones((len(cFolders)*12, 1)))
     Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
     for f in range(len(cFolders)):
@@ -694,7 +812,7 @@ def Main():
                          [mIsotropic[f][5,5]]]
        
     FName = Path(__file__).parent / 'Plots/Elasticity_IsoRUS.png'
-    Parameters, R2adj, NE = OLS2(np.log(X), np.log(Y/1E3), FName=str(FName))
+    Parameters, R2adj, NE = ExperivementVsSimulation_OLS(X*1E3, Y, FName=str(FName))
 
     for f in range(len(cFolders)):
         Start, Stop = 12*f, 12*(f+1)
@@ -712,85 +830,18 @@ def Main():
                          [mTransverse[f][5,5]]]
        
     FName = Path(__file__).parent / 'Plots/Elasticity_TraRUS.png'
-    Parameters, R2adj, NE = OLS2(np.log(X), np.log(Y/1E3), FName=str(FName))
-
-
-    # Fit homogenization with theorical model using transverse iso fabric
-    X = np.matrix(np.zeros((len(cFolders)*12, 4)))
-    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
-        
-        Start, Stop = 12*f, 12*(f+1)
-        m1, m2, m3 = tFabric[f]
-
-        # Normalize for det(M) = 1 and keep degree of anisotropy
-        DA = m3 / m1
-        m1 = (1/DA)**(1/3)
-        m2 = m1
-        m3 = DA * m1
-
-        # Build system and enforce k = 1
-        X[Start:Stop] = np.array([[1, 0, 0, np.log(BVTV[f]), np.log(m1 ** 2)],
-                                  [0, 1, 0, np.log(BVTV[f]), np.log(m1 * m2)],
-                                  [0, 1, 0, np.log(BVTV[f]), np.log(m1 * m3)],
-                                  [0, 1, 0, np.log(BVTV[f]), np.log(m2 * m1)],
-                                  [1, 0, 0, np.log(BVTV[f]), np.log(m2 ** 2)],
-                                  [0, 1, 0, np.log(BVTV[f]), np.log(m2 * m3)],
-                                  [0, 1, 0, np.log(BVTV[f]), np.log(m3 * m1)],
-                                  [0, 1, 0, np.log(BVTV[f]), np.log(m3 * m2)],
-                                  [1, 0, 0, np.log(BVTV[f]), np.log(m3 ** 2)],
-                                  [0, 0, 1, np.log(BVTV[f]), np.log(m2 * m3)],
-                                  [0, 0, 1, np.log(BVTV[f]), np.log(m3 * m1)],
-                                  [0, 0, 1, np.log(BVTV[f]), np.log(m1 * m2)]])
-        
-        Y[Start:Stop] = [[mIsotropic[f][0,0]],
-                         [mIsotropic[f][0,1]],
-                         [mIsotropic[f][0,2]],
-                         [mIsotropic[f][1,0]],
-                         [mIsotropic[f][1,1]],
-                         [mIsotropic[f][1,2]],
-                         [mIsotropic[f][2,0]],
-                         [mIsotropic[f][2,1]],
-                         [mIsotropic[f][2,2]],
-                         [mIsotropic[f][3,3]],
-                         [mIsotropic[f][4,4]],
-                         [mIsotropic[f][5,5]]]
-    
-    
-    FName = Path(__file__).parent / 'Plots/Regression_Iso.png'
-    Parameters, R2adj, NE = OLS(X, np.log(Y/1E3), FName=str(FName))
-
-    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
-        
-        Start, Stop = 12*f, 12*(f+1)
-
-        Y[Start:Stop] = [[mTransverse[f][0,0]],
-                         [mTransverse[f][0,1]],
-                         [mTransverse[f][0,2]],
-                         [mTransverse[f][1,0]],
-                         [mTransverse[f][1,1]],
-                         [mTransverse[f][1,2]],
-                         [mTransverse[f][2,0]],
-                         [mTransverse[f][2,1]],
-                         [mTransverse[f][2,2]],
-                         [mTransverse[f][3,3]],
-                         [mTransverse[f][4,4]],
-                         [mTransverse[f][5,5]]]
-        
-    FName = Path(__file__).parent / 'Plots/Regression_Tra.png'
-    Parameters, R2adj, NE = OLS(X, np.log(Y/1E3), FName=str(FName))
+    Parameters, R2adj, NE = ExperivementVsSimulation_OLS(X*1E3, Y, FName=str(FName))
 
 
     # Compare l exponent for different material
-    X = np.matrix(np.zeros((len(cFolders)*12, 4)))
+    X = np.matrix(np.zeros((len(cFolders)*12, 5)))
     Y_Iso = np.matrix(np.zeros((len(cFolders)*12, 1)))
     Y_Tra = np.matrix(np.zeros((len(cFolders)*12, 1)))
     k = 1
     for f in range(len(cFolders)):
         
         Start, Stop = 12*f, 12*(f+1)
-        m1, m2, m3 = tFabric[f]
+        m1, m2, m3 = Fabric[f]
 
         # Normalize for det(M) = 1 and keep degree of anisotropy
         DA = m3 / m1
@@ -798,32 +849,32 @@ def Main():
         m2 = m1
         m3 = DA * m1
 
-        # Build system and enforce k
-        X[Start:Stop] = np.array([[1, 0, 0, np.log(m1 ** 2)],
-                                  [0, 1, 0, np.log(m1 * m2)],
-                                  [0, 1, 0, np.log(m1 * m3)],
-                                  [0, 1, 0, np.log(m2 * m1)],
-                                  [1, 0, 0, np.log(m2 ** 2)],
-                                  [0, 1, 0, np.log(m2 * m3)],
-                                  [0, 1, 0, np.log(m3 * m1)],
-                                  [0, 1, 0, np.log(m3 * m2)],
-                                  [1, 0, 0, np.log(m3 ** 2)],
-                                  [0, 0, 1, np.log(m2 * m3)],
-                                  [0, 0, 1, np.log(m3 * m1)],
-                                  [0, 0, 1, np.log(m1 * m2)]])
+        # Build system
+        X[Start:Stop] = np.array([[1, 0, 0, np.log(m1 ** 2), np.log(BVTV[f])],
+                                  [0, 1, 0, np.log(m1 * m2), np.log(BVTV[f])],
+                                  [0, 1, 0, np.log(m1 * m3), np.log(BVTV[f])],
+                                  [0, 1, 0, np.log(m2 * m1), np.log(BVTV[f])],
+                                  [1, 0, 0, np.log(m2 ** 2), np.log(BVTV[f])],
+                                  [0, 1, 0, np.log(m2 * m3), np.log(BVTV[f])],
+                                  [0, 1, 0, np.log(m3 * m1), np.log(BVTV[f])],
+                                  [0, 1, 0, np.log(m3 * m2), np.log(BVTV[f])],
+                                  [1, 0, 0, np.log(m3 ** 2), np.log(BVTV[f])],
+                                  [0, 0, 1, np.log(m2 * m3), np.log(BVTV[f])],
+                                  [0, 0, 1, np.log(m3 * m1), np.log(BVTV[f])],
+                                  [0, 0, 1, np.log(m1 * m2), np.log(BVTV[f])]])
         
-        Y_Iso[Start:Stop] = [[mIsotropic[f][0,0]],
-                            [mIsotropic[f][0,1]],
-                            [mIsotropic[f][0,2]],
-                            [mIsotropic[f][1,0]],
-                            [mIsotropic[f][1,1]],
-                            [mIsotropic[f][1,2]],
-                            [mIsotropic[f][2,0]],
-                            [mIsotropic[f][2,1]],
-                            [mIsotropic[f][2,2]],
-                            [mIsotropic[f][3,3]],
-                            [mIsotropic[f][4,4]],
-                            [mIsotropic[f][5,5]]]
+        Y_Iso[Start:Stop] = [[sIsotropic[f][0,0]],
+                            [sIsotropic[f][0,1]],
+                            [sIsotropic[f][0,2]],
+                            [sIsotropic[f][1,0]],
+                            [sIsotropic[f][1,1]],
+                            [sIsotropic[f][1,2]],
+                            [sIsotropic[f][2,0]],
+                            [sIsotropic[f][2,1]],
+                            [sIsotropic[f][2,2]],
+                            [sIsotropic[f][3,3]],
+                            [sIsotropic[f][4,4]],
+                            [sIsotropic[f][5,5]]]
         
         Y_Tra[Start:Stop] = [[mTransverse[f][0,0]],
                             [mTransverse[f][0,1]],
@@ -838,45 +889,14 @@ def Main():
                             [mTransverse[f][4,4]],
                             [mTransverse[f][5,5]]]
     
-        # Enforce k
-        Y_Iso[Start:Stop] = np.log(Y_Iso[Start:Stop]/1E3) - np.log(BVTV[f])*k
-        Y_Tra[Start:Stop] = np.log(Y_Tra[Start:Stop]/1E3) - np.log(BVTV[f])*k
-    
-    FName = Path(__file__).parent / 'Plots/Regression_Iso.png'
-    P_Iso, R2adj, NE = OLS3(X, Y_Iso, k, FName=str(FName))
-    FName = Path(__file__).parent / 'Plots/Regression_Tra.png'
-    P_Tra, R2adj, NE = OLS3(X, Y_Tra, k, FName=str(FName))
+    # Impose k
+    Y_Iso = np.log(Y_Iso) - X[:,-1] * k
+    Y_Tra = np.log(Y_Tra) - X[:,-1] * k
 
-    # Strange adjustment
-    # for f in range(len(cFolders)):
-    #     Start, Stop = 12*f, 12*(f+1)
-    #     Y_Iso[Start:Stop] = [[mIsotropic[f][0,0]],
-    #                         [mIsotropic[f][0,1]*2],
-    #                         [mIsotropic[f][0,2]*2],
-    #                         [mIsotropic[f][1,0]*2],
-    #                         [mIsotropic[f][1,1]],
-    #                         [mIsotropic[f][1,2]*2],
-    #                         [mIsotropic[f][2,0]*2],
-    #                         [mIsotropic[f][2,1]*2],
-    #                         [mIsotropic[f][2,2]],
-    #                         [mIsotropic[f][3,3]],
-    #                         [mIsotropic[f][4,4]],
-    #                         [mIsotropic[f][5,5]]]
-    #     Y_Tra[Start:Stop] = [[mTransverse[f][0,0]],
-    #                         [mTransverse[f][0,1]/2],
-    #                         [mTransverse[f][0,2]/2],
-    #                         [mTransverse[f][1,0]/2],
-    #                         [mTransverse[f][1,1]],
-    #                         [mTransverse[f][1,2]/2],
-    #                         [mTransverse[f][2,0]/2],
-    #                         [mTransverse[f][2,1]/2],
-    #                         [mTransverse[f][2,2]],
-    #                         [mTransverse[f][3,3]],
-    #                         [mTransverse[f][4,4]],
-    #                         [mTransverse[f][5,5]]]
+    P_Iso, R2adj, NE = Compare_l(X[:,:-1], Y_Iso, k)
+    P_Tra, R2adj, NE = Compare_l(X[:,:-1], Y_Tra, k)
 
-    FName = Path(__file__).parent / 'Plots/Regression_IsoVsTra.png'
-    P, R2adj, NE = OLS4(Y_Iso, Y_Tra, FName=str(FName))
+
 
 
 
