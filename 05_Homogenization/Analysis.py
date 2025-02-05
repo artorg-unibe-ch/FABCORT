@@ -346,8 +346,8 @@ def ExperivementVsSimulation_OLS(X, Y, Alpha=0.95, FName=''):
     Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
     Axes.set_xlabel('RUS $\mathrm{\mathbb{S}}$ (MPa)')
     Axes.set_ylabel('Simulation $\mathrm{\mathbb{S}}$ (MPa)')
-    # plt.xscale('log')
-    # plt.yscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.legend(loc='upper left')
     plt.subplots_adjust(left=0.15, bottom=0.15)
     if len(FName) > 0:
@@ -689,8 +689,97 @@ def Main():
     mIsotropic = np.mean(Isotropic, axis=1)
     mTransverse = np.mean(Transverse, axis=1)
 
+    # Compare with RUS
+    X = np.matrix(np.ones((len(cFolders)*12, 1)))
+    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
+    for f in range(len(cFolders)):
+        
+        Start, Stop = 12*f, 12*(f+1)
+        X[Start:Stop] = [[RUS[f][0,0]],
+                         [RUS[f][0,1]],
+                         [RUS[f][0,2]],
+                         [RUS[f][1,0]],
+                         [RUS[f][1,1]],
+                         [RUS[f][1,2]],
+                         [RUS[f][2,0]],
+                         [RUS[f][2,1]],
+                         [RUS[f][2,2]],
+                         [RUS[f][3,3]],
+                         [RUS[f][4,4]],
+                         [RUS[f][5,5]]]
+        
+        Y[Start:Stop] = [[mIsotropic[f][0,0]],
+                         [mIsotropic[f][0,1]],
+                         [mIsotropic[f][0,2]],
+                         [mIsotropic[f][1,0]],
+                         [mIsotropic[f][1,1]],
+                         [mIsotropic[f][1,2]],
+                         [mIsotropic[f][2,0]],
+                         [mIsotropic[f][2,1]],
+                         [mIsotropic[f][2,2]],
+                         [mIsotropic[f][3,3]],
+                         [mIsotropic[f][4,4]],
+                         [mIsotropic[f][5,5]]]
+       
+    FName = Path(__file__).parent / 'Plots/Elasticity_IsoRUS.png'
+    Parameters, R2adj, NE = ExperivementVsSimulation_OLS(X*1E3, Y, FName=str(FName))
+
+    for f in range(len(cFolders)):
+        Start, Stop = 12*f, 12*(f+1)
+        Y[Start:Stop] = [[mTransverse[f][0,0]],
+                         [mTransverse[f][0,1]],
+                         [mTransverse[f][0,2]],
+                         [mTransverse[f][1,0]],
+                         [mTransverse[f][1,1]],
+                         [mTransverse[f][1,2]],
+                         [mTransverse[f][2,0]],
+                         [mTransverse[f][2,1]],
+                         [mTransverse[f][2,2]],
+                         [mTransverse[f][3,3]],
+                         [mTransverse[f][4,4]],
+                         [mTransverse[f][5,5]]]
+       
+    FName = Path(__file__).parent / 'Plots/Elasticity_TraRUS.png'
+    Parameters, R2adj, NE = ExperivementVsSimulation_OLS(X*1E3, Y, FName=str(FName))
+
+
     BoxPlot([[F[0] for F in Fabric], [F[1] for F in Fabric], [F[2] for F in Fabric]],
-            ['', 'Fabric Eigenvalues'], SetsLabels=['$m_1$', '$m_2$', '$m_3$'],)
+            ['', 'Fabric Eigenvalues'], SetsLabels=['$m_1$', '$m_2$', '$m_3$'],
+            FigName=Path(__file__).parent / 'Plots/FabricEigenvalues.png')
+
+    # Plot anisotropy vs BVTV
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(BVTV, [F[2] / F[0] for F in Fabric], label='Fabric $m_3 / m_1$',
+              linestyle='none', marker='o', color=(0,0,0))
+    Axis.plot(BVTV, [F[2,2] / F[0,0] for F in mIsotropic], label='Isotropic $E_{33} / E_{11}$',
+              linestyle='none', marker='o', color=(1,0,0))
+    Axis.plot(BVTV, [F[2,2] / F[0,0] for F in mTransverse], label='Transverse $E_{33} / E_{11}$',
+              linestyle='none', marker='o', color=(0,0,1))
+    Axis.plot(BVTV, [F[2,2] / F[0,0] for F in RUS], label='RUS $E_{33} / E_{11}$',
+              linestyle='none', marker='o', color=(1,0,1))
+    Axis.set_xlabel('BV/TV (-)')
+    Axis.set_ylim([0.95, 2.85])
+    Axis.set_ylabel('Degree of Anisotropy (-)')
+    plt.legend(loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.15))
+    plt.savefig(Path(__file__).parent / 'Plots/AnisotropyBVTV.png')
+    plt.show(Figure)
+
+    # Plot anisotropy vs BVTV
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(BVTV, [F[2] / ((F[0]+F[1])/2) for F in Fabric], label='Fabric\n$m_3 / ((m_1+m_2)/2)$',
+              linestyle='none', marker='o', color=(0,0,0))
+    Axis.plot(BVTV, [F[2,2] / ((F[0,0]+F[1,1])/2) for F in mIsotropic], label='Isotropic\n$E_{33} / ((E_{11}+E_{22})/2)$',
+              linestyle='none', marker='o', color=(1,0,0))
+    Axis.plot(BVTV, [F[2,2] / ((F[0,0]+F[1,1])/2) for F in mTransverse], label='Transverse\n$E_{33} / ((E_{11}+E_{22})/2)$',
+              linestyle='none', marker='o', color=(0,0,1))
+    Axis.plot(BVTV, [F[2,2] / ((F[0,0]+F[1,1])/2) for F in RUS], label='RUS\n$E_{33} / ((E_{11}+E_{22})/2)$',
+              linestyle='none', marker='o', color=(1,0,1))
+    Axis.set_xlabel('BV/TV (-)')
+    Axis.set_ylim([0.95, 2.85])
+    Axis.set_ylabel('Degree of Anisotropy (-)')
+    plt.legend(loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.25))
+    plt.savefig(Path(__file__).parent / 'Plots/AnisotropyBVTV_T.png')
+    plt.show(Figure)
 
     # Compute error to ideal transverse isotropy
     iTransverse = np.zeros(mIsotropic.shape)
@@ -777,23 +866,6 @@ def Main():
     Parameters, R2adj, NE = Compare_kl(X[~Mask], Y[~Mask], Lambda0, Lambda0p, Mu0)
 
 
-
-
-
-    # Plot anisotropy vs BVTV
-    Figure, Axis = plt.subplots(1,1)
-    Axis.plot(BVTV, [F[2] / F[0] for F in Fabric], label='$m_3 / m_1$',
-              linestyle='none', marker='o', color=(0,0,0))
-    Axis.plot(BVTV, [F[2,2] / F[0,0] for F in mIsotropic], label='Isotropic $E_{33} / E_{11}$',
-              linestyle='none', marker='o', color=(1,0,0))
-    Axis.plot(BVTV, [F[2,2] / F[0,0] for F in mTransverse], label='Transverse $E_{33} / E_{11}$',
-              linestyle='none', marker='o', color=(0,0,1))
-    Axis.plot(BVTV, [F[2,2] / F[0,0] for F in RUS], label='RUS $E_{33} / E_{11}$',
-              linestyle='none', marker='o', color=(1,0,1))
-    Axis.set_xlabel('BV/TV (-)')
-    Axis.set_ylabel('Degree of Anisotropy (-)')
-    plt.legend()
-    plt.show(Figure)
 
     PlotHistogram(BVTV/BVTV.mean(),'Test')
     PlotHistogram(Fabric[:,0]/Fabric[:,0].mean(),'Test')
@@ -980,58 +1052,6 @@ def Main():
     # Investigate anisotropy
     Anisotropy(cFolders, RUS, mIsotropic, mTransverse, Fabric)
 
-    # Compare with RUS
-    X = np.matrix(np.ones((len(cFolders)*12, 1)))
-    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
-        
-        Start, Stop = 12*f, 12*(f+1)
-        X[Start:Stop] = [[RUS[f][0,0]],
-                         [RUS[f][0,1]],
-                         [RUS[f][0,2]],
-                         [RUS[f][1,0]],
-                         [RUS[f][1,1]],
-                         [RUS[f][1,2]],
-                         [RUS[f][2,0]],
-                         [RUS[f][2,1]],
-                         [RUS[f][2,2]],
-                         [RUS[f][3,3]],
-                         [RUS[f][4,4]],
-                         [RUS[f][5,5]]]
-        
-        Y[Start:Stop] = [[mIsotropic[f][0,0]],
-                         [mIsotropic[f][0,1]],
-                         [mIsotropic[f][0,2]],
-                         [mIsotropic[f][1,0]],
-                         [mIsotropic[f][1,1]],
-                         [mIsotropic[f][1,2]],
-                         [mIsotropic[f][2,0]],
-                         [mIsotropic[f][2,1]],
-                         [mIsotropic[f][2,2]],
-                         [mIsotropic[f][3,3]],
-                         [mIsotropic[f][4,4]],
-                         [mIsotropic[f][5,5]]]
-       
-    FName = Path(__file__).parent / 'Plots/Elasticity_IsoRUS.png'
-    Parameters, R2adj, NE = ExperivementVsSimulation_OLS(X*1E3, Y, FName=str(FName))
-
-    for f in range(len(cFolders)):
-        Start, Stop = 12*f, 12*(f+1)
-        Y[Start:Stop] = [[mTransverse[f][0,0]],
-                         [mTransverse[f][0,1]],
-                         [mTransverse[f][0,2]],
-                         [mTransverse[f][1,0]],
-                         [mTransverse[f][1,1]],
-                         [mTransverse[f][1,2]],
-                         [mTransverse[f][2,0]],
-                         [mTransverse[f][2,1]],
-                         [mTransverse[f][2,2]],
-                         [mTransverse[f][3,3]],
-                         [mTransverse[f][4,4]],
-                         [mTransverse[f][5,5]]]
-       
-    FName = Path(__file__).parent / 'Plots/Elasticity_TraRUS.png'
-    Parameters, R2adj, NE = ExperivementVsSimulation_OLS(X*1E3, Y, FName=str(FName))
 
 
     # Compare l exponent for different material

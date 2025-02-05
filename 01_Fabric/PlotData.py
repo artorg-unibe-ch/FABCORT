@@ -38,7 +38,7 @@ def Main():
     Files = sorted([F for F in Path.iterdir(FilePath) if F.name.endswith('.fab')])
 
     # Read data of CT Analyzer
-    DataPath = Path(__file__).parents[1] / '00_data'
+    DataPath = Path(__file__).parents[1] / '00_Data'
     Data = pd.read_excel(DataPath / 'Cij.xls')
 
     # Collect BV/TV and fabric
@@ -64,7 +64,7 @@ def Main():
 
     # Plot relation to published data        
     FName = str(Path(__file__).parent / 'Results' / 'BVTV_OLS.png')
-    OLS = Plot.OLS(X, Y, XLabel='CTAnalyser', YLabel='Otsu Threshold', FileName=FName, Show=False)
+    OLS = Plot.OLS(X, Y, XLabel='CTAnalyser BV/TV', YLabel='Mean Otsu BV/TV', FileName=FName, Show=False)
     Time.Process(0)
 
     # Iterate for each file
