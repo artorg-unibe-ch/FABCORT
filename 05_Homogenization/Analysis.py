@@ -20,11 +20,12 @@ import pandas as pd
 from pathlib import Path
 from scipy.stats import t
 import matplotlib.pyplot as plt
+from scipy.optimize import minimize
 from scipy.stats import ttest_rel, ttest_ind
 from scipy.stats.distributions import norm, t
 
 sys.path.append(str(Path(__file__).parents[1]))
-from Utils import Read
+from Utils import Read, Tensor
 
 #%% Functions
 
@@ -688,23 +689,51 @@ def Main():
     mIsotropic = np.mean(Isotropic, axis=1)
     mTransverse = np.mean(Transverse, axis=1)
 
-    BoxPlot([[F[0] for F in Fabric], [F[1] for F in Fabric], [F[2] for F in Fabric]])
+    BoxPlot([[F[0] for F in Fabric], [F[1] for F in Fabric], [F[2] for F in Fabric]],
+            ['', 'Fabric Eigenvalues'], SetsLabels=['$m_1$', '$m_2$', '$m_3$'],)
+
+    # Compute error to ideal transverse isotropy
+    iTransverse = np.zeros(mIsotropic.shape)
+    iTransverse[:,0,0] = (mIsotropic[:,0,0] + mIsotropic[:,1,1]) / 2
+    iTransverse[:,1,1] = iTransverse[:,0,0]
+    iTransverse[:,2,2] = mIsotropic[:,2,2]
+    iTransverse[:,3,3] = (mIsotropic[:,3,3] + mIsotropic[:,4,4]) / 2
+    iTransverse[:,4,4] = iTransverse[:,3,3]
+    iTransverse[:,5,5] = mIsotropic[:,5,5]
+    iTransverse[:,1,2] = (mIsotropic[:,0,2] + mIsotropic[:,0,2]) / 2
+    iTransverse[:,0,2] = iTransverse[:,1,2]
+    iTransverse[:,0,1] = mIsotropic[:,0,1]
+    iTransverse[:,2,0] = iTransverse[:,0,2]
+    iTransverse[:,2,1] = iTransverse[:,1,2]
+    iTransverse[:,1,0] = iTransverse[:,0,1]
+    NE = np.linalg.norm(mIsotropic - iTransverse, axis=(1,2))
+    NE_Iso = NE / np.linalg.norm(mIsotropic, axis=(1,2)) * 100
+
+    iTransverse = np.zeros(mTransverse.shape)
+    iTransverse[:,0,0] = (mTransverse[:,0,0] + mTransverse[:,1,1]) / 2
+    iTransverse[:,1,1] = iTransverse[:,0,0]
+    iTransverse[:,2,2] = mTransverse[:,2,2]
+    iTransverse[:,3,3] = (mTransverse[:,3,3] + mTransverse[:,4,4]) / 2
+    iTransverse[:,4,4] = iTransverse[:,3,3]
+    iTransverse[:,5,5] = mTransverse[:,5,5]
+    iTransverse[:,1,2] = (mTransverse[:,0,2] + mTransverse[:,0,2]) / 2
+    iTransverse[:,0,2] = iTransverse[:,1,2]
+    iTransverse[:,0,1] = mTransverse[:,0,1]
+    iTransverse[:,2,0] = iTransverse[:,0,2]
+    iTransverse[:,2,1] = iTransverse[:,1,2]
+    iTransverse[:,1,0] = iTransverse[:,0,1]
+    NE = np.linalg.norm(mTransverse - iTransverse, axis=(1,2))
+    NE_Tra = NE / np.linalg.norm(mTransverse, axis=(1,2)) * 100
 
 
-    # Isotropic model constants
-    E, Nu = 1E4, 0.3
-    Mu = E / (2 * (1 + Nu))
-    S = np.array([[1/E, -Nu/E, -Nu/E, 0, 0, 0],
-                  [-Nu/E, 1/E, -Nu/E, 0, 0, 0],
-                  [-Nu/E, -Nu/E, 1/E, 0, 0, 0],
-                  [0, 0, 0, 1/Mu, 0, 0],
-                  [0, 0, 0, 0, 1/Mu, 0],
-                  [0, 0, 0, 0, 0, 1/Mu]])
-    C = np.linalg.inv(S)
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(BVTV, NE_Iso, linestyle='none', marker='o', color=(1,0,0), label='Isotropic')
+    Axis.plot(BVTV, NE_Tra, linestyle='none', marker='o', color=(0,0,1), label='Transverse')
+    Axis.set_xlabel('BV/TV (-)')
+    Axis.set_ylabel('Norm Error (%)')
+    plt.legend()
+    plt.show(Figure)
 
-    Mu0 = C[5,5]
-    Lambda0 = C[0,0] - 2*Mu0
-    Lambda0p = C[1,0]
 
     # Fit homogenization with theorical model
     X = np.matrix(np.zeros((len(cFolders)*12, 5)))

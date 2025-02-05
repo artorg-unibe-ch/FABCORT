@@ -92,6 +92,15 @@ def Main():
             R = np.column_stack([eVecs[0],eVecs[1]])
             e1e2e3 = R @ np.vstack([e1,e2])
 
+            # Plot lines
+            if i == 0:
+                Axis[i].plot(e1e2e3[1], e1e2e3[2], color=(0,0,0,0.2))
+            elif i == 1:
+                Axis[i].plot(e1e2e3[0], e1e2e3[2], color=(0,0,0,0.2))
+            else:
+                Axis[i].plot(e1e2e3[0], e1e2e3[1], color=(0,0,0,0.2))
+
+
             # Store values
             e1s.append(e1e2e3[0])
             e2s.append(e1e2e3[1])
@@ -107,23 +116,23 @@ def Main():
 
         # Plot the ellipse
         if i == 0:
-            Axis[i].plot(Mean2, Mean3, color=(0,0,0))
-            Axis[i].fill_between(Mean2, Mean3-Std3, Mean3+Std3, color=(0.8,0.8,0.8))
-            Axis[i].fill_betweenx(Mean3, Mean2-Std2, Mean2+Std2, color=(0.8,0.8,0.8))
+            # Axis[i].plot(Mean2, Mean3, color=(0,0,0))
+            # Axis[i].fill_between(Mean2, Mean3-Std3, Mean3+Std3, color=(0.8,0.8,0.8))
+            # Axis[i].fill_betweenx(Mean3, Mean2-Std2, Mean2+Std2, color=(0.8,0.8,0.8))
             Axis[i].set_xlabel('e$_2$')
             Axis[i].set_ylabel('e$_3$')
 
         elif i == 1:
-            Axis[i].plot(Mean1, Mean3, color=(0,0,0))
-            Axis[i].fill_between(Mean1, Mean3-Std3, Mean3+Std3, color=(0.8,0.8,0.8))
-            Axis[i].fill_betweenx(Mean3, Mean1-Std1, Mean1+Std1, color=(0.8,0.8,0.8))
+            # Axis[i].plot(Mean1, Mean3, color=(0,0,0))
+            # Axis[i].fill_between(Mean1, Mean3-Std3, Mean3+Std3, color=(0.8,0.8,0.8))
+            # Axis[i].fill_betweenx(Mean3, Mean1-Std1, Mean1+Std1, color=(0.8,0.8,0.8))
             Axis[i].set_xlabel('e$_1$')
             Axis[i].set_ylabel('e$_3$')
 
         else:
-            Axis[i].plot(Mean1, Mean2, color=(0,0,0))
-            Axis[i].fill_between(Mean1, Mean2-Std2, Mean2+Std2, color=(0.8,0.8,0.8))
-            Axis[i].fill_betweenx(Mean2, Mean1-Std1, Mean1+Std1, color=(0.8,0.8,0.8))
+            # Axis[i].plot(Mean1, Mean2, color=(0,0,0))
+            # Axis[i].fill_between(Mean1, Mean2-Std2, Mean2+Std2, color=(0.8,0.8,0.8))
+            # Axis[i].fill_betweenx(Mean2, Mean1-Std1, Mean1+Std1, color=(0.8,0.8,0.8))
             Axis[i].set_xlabel('e$_1$')
             Axis[i].set_ylabel('e$_2$')
 

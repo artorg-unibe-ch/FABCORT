@@ -506,7 +506,7 @@ class Tensor():
 
         return Tensor
 
-    def Othotropic(self, E1, E2, E3, Mu23, Mu31, Mu12, Nu23, Nu31, Nu12, Basis=np.eye(3)):
+    def Orthotropic(self, E1, E2, E3, Mu23, Mu31, Mu12, Nu23, Nu31, Nu12, Basis=np.eye(3)):
         
         """Build the full 3x3x3x3 transverse isotropic elasticity tensor."""
 
