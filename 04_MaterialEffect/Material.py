@@ -61,6 +61,29 @@ def Main(E=10000, Nu=0.3, DA=2.0):
     FName = str(Path(__file__).parent / 'F_Stiffness.png')
     Tensor.PlotTensor(Sf/1E3, FileName=FName)
 
+    # Material parameters form Philippe
+    E1 = 12.4425
+    E2 = 12.4425
+    E3 = 23.7708
+    Nu23 = 0.245987
+    Nu31 = 0.469944
+    Nu12 = 0.34
+    Mu23 = 6.41714
+    Mu31 = 6.41714
+    Mu12 = 4.64274
+
+    # Parameters for Abaqus
+    print('Material parameters for Abaqus')
+    print('E1 =', E1)
+    print('E2 =', E2)
+    print('E3 =', E3)
+    print('Nu12 =', Nu12)
+    print('Nu13 =', Nu31 / E3 * E1)
+    print('Nu23 =', Nu23)
+    print('G12 =', Mu12)
+    print('G13 =', Mu31)
+    print('G23 =', Mu23)
+
     return
     
 

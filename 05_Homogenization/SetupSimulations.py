@@ -296,6 +296,11 @@ def Main():
         # Store file list
         [AllInps.append(I) for I in FolderInps]
         
+    # Full file path
+    AllInps = []
+    for F in Folders:
+        for I in AbaqusInps:
+            AllInps.append(F / I)
 
     # Write bash script
     NBatch = 6
