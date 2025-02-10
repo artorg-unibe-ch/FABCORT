@@ -328,10 +328,10 @@
 		\frametitle{Anisotropy}
 		\vfill
 		\begin{columns}
-			\column{0.375\linewidth}
+			\column{0.5\linewidth}
 			\centering
-			\includegraphics[width=\linewidth]{05_Homogenization/Plots/FabricEigenvalues}\\
-			\column{0.625\linewidth}
+			\includegraphics[width=\linewidth]{05_Homogenization/Plots/Anisotropy}\\
+			\column{0.5\linewidth}
 			\centering
 			\includegraphics[width=\linewidth]{05_Homogenization/Plots/AnisotropyBVTV}\\
 		\end{columns}
@@ -360,7 +360,7 @@
 	\begin{frame}
 		\frametitle{Comparison with Trabecular Bone}
 		\centering
-		$\mathbb{S}_{Ts} = \mathbb{S}_{T} / |\mathbb{S}_{T}| * |\mathbb{S}_{I}|$
+		$\mathbb{S}_{Ts} = \mathbb{S}_{T} / ||\mathbb{S}_{T}|| * ||\mathbb{S}_{I}||$
 		\begin{table}
 			\resizebox{\textwidth}{!}{%
 			\begin{tabular}{l|cc|ccccc|c}
@@ -369,41 +369,35 @@
 				Gross et al. & Trab. & 18 & 4609 & 3692 & 3738 & 1.60 & 0.99 & 1.67 \\
 				Panyasantisuk et al. & Trab. & 36 & 3841 & 3076 & 3115 & 1.60 & 0.99 & 1.54 \\
 				Simon et al & Trab. & 61 & 2738 & 1662 & 2187 & 1.60 & 0.99 & 1.99 \\
-				Present study & Cort. ($\mathbb{S}_{I}$) & 13 & 4882 & 4809 & 3645 & 1.60 & 0.99 & 2.02 \\
-				Present study & Cort. ($\mathbb{S}_{Ts}$) & 13 & 6309 & 6278 & 1194 & 1.60 & 0.99 & 2.02 \\
+				Present study & Cort. ($\mathbb{S}_{I}$) & 13 & 5389 & 5307 & 4023 & 1.60 & 0.99 & 2.02 \\
+				Present study & Cort. ($\mathbb{S}_{Ts}$) & 13 & 5574 & 5511 & 3077 & 1.60 & 0.99 & 2.02 \\
 			\end{tabular}}
 		\end{table}
-	\end{frame}
-
-	\begin{frame}
-		\frametitle{Anisotropy}
-		\vfill
-		\begin{columns}
-			\column{0.5\linewidth}
-			\centering
-			\includegraphics[width=\linewidth]{05_Homogenization/Plots/Anisotropy}\\
-			Main directions DA
-			\column{0.5\linewidth}
-			\centering
-			\includegraphics[width=\linewidth]{05_Homogenization/Plots/AnisotropyRatios}\\
-			DA ratios ($e_3$/$e_1$)
-		\end{columns}
-		\vfill
 	\end{frame}
 
 	\begin{frame}
 		\frametitle{Comparison $l$ Exponent}
-		\centering
-		$\mathbb{S}_{Is} = \mathbb{S}_{I} / |\mathbb{S}_{I}| * |\mathbb{S}_{T}|$
-		\begin{table}
+		\begin{columns}
+			\column{0.5\linewidth}
+			Reference: Transverse isotropic
+			\begin{itemize}
+				\item $\mathbb{S}_{Is} = \mathbb{S}_{I} / |\mathbb{S}_{I}| * |\mathbb{S}_{T}|$
+				\item $\lambda_0 = 11096$
+				\item $\lambda_0$'$ = 10970$
+				\item $\mu_0 = 6124$
+				\item $k = 2.18$
+			\end{itemize}
+
+			\column{0.5\linewidth}
 			\resizebox{\textwidth}{!}{%
-			\begin{tabular}{l|ccccc}
-				Parameters  & $\lambda_0$ & $\lambda_0$' & $\mu_0$ & k & l \\
+			\begin{tabular}{l|cc}
+				Matrix  & Isotropic & Transverse \\
 				\hline
-				Isotropic & 21480 & 21156 & 16035 & 1 & 0.075 \\
-				Transverse & 27757 & 26935 & 5070 & 1 & 0.66 \\
+				$l$ & -0.04 & 0.46 \\
+				95\% CI Low & -0.12 & 0.39 \\
+				95\% CI High & 0.04 & 0.52 \\
 			\end{tabular}}
-		\end{table}
+			\end{columns}	
 	\end{frame}
 	
 	%----------------------------------------------------------------
