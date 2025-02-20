@@ -84,6 +84,16 @@ def Main(E=10000, Nu=0.3, DA=2.0):
     print('G13 =', Mu31)
     print('G23 =', Mu23)
 
+    # Build compliance and stiffness matrices
+    E = np.array([[1/E1, -Nu12/E1, -Nu31/E3, 0, 0, 0],
+                  [-Nu12/E1, 1/E2, -Nu23/E2, 0, 0, 0],
+                  [-Nu31/E3, -Nu23/E2, 1/E3, 0, 0, 0],
+                  [0, 0, 0, 1/Mu23, 0, 0],
+                  [0, 0, 0, 0, 1/Mu31, 0],
+                  [0, 0, 0, 0, 0, 1/Mu12]])
+
+    C = np.linalg.inv(E)
+
     return
     
 

@@ -870,7 +870,7 @@ def Main():
                             [mTransverse[f][5,5]]]
 
     FName = Path(__file__).parent / 'Plots/Regression_IsoVsTra.png'
-    P, R2adj, NE = MaterialComparison(Y_Iso, Y_Tra, FName=str(FName))
+    MaterialComparison(Y_Iso, Y_Tra, FName=str(FName))
 
 
     # Compute norm of tensors
