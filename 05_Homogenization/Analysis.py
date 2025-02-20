@@ -44,7 +44,7 @@ def Anisotropy(cFolders, RUS, mIsotropic, mTransverse, Fabric):
     aFab[:,2] = Fabric[:,2] / Fabric[:,0]
 
     # Plot anisotropies
-    Colors = [(1,0,1),(1,0,0),(0,0,1),(0,0,0)]
+    Colors = [(0,0,0),(1,0,0),(0,0,1),(1,0,1)]
     Labels = ['Fabric','Isotropic','Transverse','Experiment']
     FName = Path(__file__).parent / 'Plots/Anisotropy.png'
     Figure, Axis = plt.subplots(1,1)
