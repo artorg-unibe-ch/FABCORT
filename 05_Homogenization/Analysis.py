@@ -767,7 +767,7 @@ def Main():
         xLine = np.linspace(BVTV.min(), BVTV.max(), 10)
         yLine = B[0,0] + B[1,0] * xLine
         Axis.plot(X[:,1], Y, label=Labels[i], linestyle='none', marker='o', color=Colors[i])
-        Axis.plot(xLine, yLine, linestyle='--', marker='none', color=Colors[i], linewidth=1)
+        Axis.plot(xLine, yLine, linestyle='--', color=Colors[i], linewidth=1)
     Axis.set_xlabel('BV/TV (-)')
     Axis.set_ylim([0.95, 2.85])
     Axis.set_ylabel('Degree of Anisotropy (-)')
