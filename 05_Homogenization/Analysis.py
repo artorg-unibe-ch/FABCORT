@@ -769,7 +769,7 @@ def Main():
         Axis.plot(X[:,1], Y, label=Labels[i], linestyle='none', marker='o', color=Colors[i])
         Axis.plot(xLine, yLine, linestyle='--', color=Colors[i], linewidth=1)
     Axis.set_xlabel('BV/TV (-)')
-    Axis.set_ylim([0.95, 2.85])
+    # Axis.set_ylim([0.95, 2.85])
     Axis.set_ylabel('Degree of Anisotropy (-)')
     plt.legend(loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.15))
     plt.savefig(Path(__file__).parent / 'Plots/AnisotropyBVTV.png')
