@@ -14,10 +14,10 @@ __version__ = '1.0'
 
 #%% Imports
 
-import sys
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+from skimage import io, morphology, measure
 
 
 #%% Functions
@@ -27,41 +27,33 @@ import matplotlib.pyplot as plt
 
 def Main():
 
-    # Define grid
-    nx, ny = 100, 100  # Grid size
-    x = np.linspace(-2, 2, nx)
-    y = np.linspace(-2, 2, ny)
-    X, Y = np.meshgrid(x, y)
+    # Read images
+    Stained = io.imread('Stained.png')
+    Segmented = io.imread('Segmented.png')
 
-    # Define parameters
-    U_inf = 1  # Free-stream velocity
-    R = 0.5  # Radius of the disk
-    Xc, Yc = 0, 0  # Center of the disk
+    # Crop images
+    X0, X1 = 70, 390
+    Y0, Y1 = 220, 460
+    Stained = Stained[Y0:Y1,X0:X1]
+    Segmented = Segmented[Y0:Y1,X0:X1]
 
-    # Convert to polar coordinates
-    r = np.sqrt((X - Xc)**2 + (Y - Yc)**2)
-    theta = np.arctan2(Y - Yc, X - Xc)
+    # Smooth cement line mask
+    Disk = morphology.disk(40)
+    Mask = Segmented[:,:,2] == 255
+    Mask = morphology.binary_dilation(Mask, Disk)
+    Mask = morphology.binary_erosion(Mask, Disk)
 
-    # Define velocity components using potential flow theory
-    u = U_inf * (1 - (R**2 / r**2)) * np.cos(theta)
-    v = U_inf * (1 + (R**2 / r**2)) * np.sin(theta)
+    # Compute isodistances from canal to cement line
+    Label = Mask*1 + (Segmented[:,:,1] == 255)*1
+    MedialAxis, Distances = morphology.medial_axis(1-Label, return_distance=True)
+    Contours = measure.find_contours(Distances, level=1) # Equals to Distance == 1
 
-    # Mask values inside the disk
-    u[r < R] = np.nan
-    v[r < R] = np.nan
-
-    # Plot streamlines
-    plt.figure(figsize=(6, 6))
-    plt.streamplot(X, Y, u, v, density=2, color='b')
-    circle = plt.Circle((Xc, Yc), R, color='k', fill=True)
-    plt.gca().add_patch(circle)
-    plt.xlim(-2, 2)
-    plt.ylim(-2, 2)
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title('Streamlines Around a Circular Obstacle')
-    plt.show()
-
+    Figure, Axis = plt.subplots(1,1)
+    Axis.imshow(Stained)
+    for C in Contours:
+        Axis.plot(C[:,1],C[:,0],color=(1,0,0))
+    # Axis.imshow(Segmented)
+    plt.show(Figure)
 
     return
 
