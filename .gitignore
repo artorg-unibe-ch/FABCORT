@@ -21,3 +21,6 @@
 
 # Ignore blender files
 *.blend
+
+# Ignore inkscape files
+*.svg
