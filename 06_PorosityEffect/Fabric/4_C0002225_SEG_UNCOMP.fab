@@ -1,0 +1,22 @@
+
+=====================================================================
+     Medical Image Analysis  by  D.H. Pahr 
+=====================================================================
+ Date - Time   = 2020/6/16 - 12:55
+ Param: -step  =      5
+ Param: -power =      2   (  128 Directions)
+ Param: -ftype =      1   (Ellip..1, 2nd Order..2)
+ Param: -valid =    0.0
+ Filename      = 4C0002225_SEG_UNCOMPResized.mhd
+ nx,ny,nz      = [87, 87, 87]
+ Threshold     = [50]
+ BV/TV         = 0.2435
+
+
+--------------------------------------------------------
+RESULTS: Morphological analysis normalized by : trace
+--------------------------------------------------------
+ MIL - Eigen values   :   0.70609    0.87492    1.41899
+ MIL - Eigen vector 1 :   0.92799    0.37256   -0.00653
+ MIL - Eigen vector 2 :   0.37215   -0.92757   -0.03352
+ MIL - Eigen vector 3 :   0.01854   -0.02868    0.99942

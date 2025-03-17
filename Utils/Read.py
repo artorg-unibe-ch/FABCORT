@@ -33,3 +33,21 @@ class Read():
         eVectors = eVectors[Args]
 
         return eValues, eVectors, BVTV
+
+    def ComplianceDat(self, DatFile):
+
+        File  = open(DatFile, 'r')
+        Text  = File.read()
+        Lines = Text.split('\n')
+
+        Index = 0
+        while 'COMPLIANCE Matrix' not in Lines[Index]:
+            Index += 1
+
+        ComplianceMatrix = np.zeros((6,6))
+
+        for i in range(6):
+            for j in range(6):
+                ComplianceMatrix[i,j] = np.float(Lines[Index+4+i].split()[j])
+
+        return ComplianceMatrix
