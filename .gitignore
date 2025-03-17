@@ -24,3 +24,6 @@
 
 # Ignore inkscape files
 *.svg
+
+# Ignore manuscript
+*Fabric_Mechanical_Property_Relationships_of_Homogenised_Human_Trabecular_and_Cortical_Bone__Models__Material_Constants_and_Applications.pdf
