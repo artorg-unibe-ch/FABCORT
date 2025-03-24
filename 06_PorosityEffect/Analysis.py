@@ -235,6 +235,23 @@ def Main():
     plt.legend(loc='upper left')
     plt.show(Figure)
 
+    Figure, Axis = plt.subplots(1,1, dpi=192)
+    Axis.plot(1-FABRho.ravel(), FABCORT[...,0].ravel(), linestyle='none', marker='o', color=(1,0,0), fillstyle='none')
+    Axis.plot(1-FABRho.ravel(), FABCORT[...,1].ravel(), linestyle='none', marker='o', color=(0,0,1), fillstyle='none')
+    Axis.plot(1-FABRho.ravel(), FABCORT[...,2].ravel(), linestyle='none', marker='o', color=(0,0,0), fillstyle='none')
+    Axis.plot(1-BVTV, eValues[:,0], linestyle='none', marker='^', color=(1,0,0), fillstyle='none')
+    Axis.plot(1-BVTV, eValues[:,1], linestyle='none', marker='^', color=(0,0,1), fillstyle='none')
+    Axis.plot(1-BVTV, eValues[:,2], linestyle='none', marker='^', color=(0,0,0), fillstyle='none')
+    Axis.plot([], linestyle='none', marker='o', color=(0.5,0.5,0.5), fillstyle='none', label='Cortical')
+    Axis.plot([], linestyle='none', marker='^', color=(0.5,0.5,0.5), fillstyle='none', label='Trabecular')
+    Axis.plot([], color=(1,0,0), label='m$_1$')
+    Axis.plot([], color=(0,0,1), label='m$_2$')
+    Axis.plot([], color=(0,0,0), label='m$_3$')
+    Axis.set_xlabel(r'1-$\rho$ (-)')
+    Axis.set_ylabel('Fabric eigenvalues (-)')
+    plt.legend(loc='upper center', ncol=5, bbox_to_anchor=(0.5, 1.15))
+    plt.show(Figure)
+
     # Plot fabric
     PlotFabric(eValues, eVectors, FABCORT, CortVectors)
 
@@ -261,7 +278,7 @@ def Main():
     P = curve_fit(Function, Phi, Ratios)
     X = np.linspace(0.0, 1.0)
 
-    Figure, Axis = plt.subplots(1,1)
+    Figure, Axis = plt.subplots(1,1, dpi=192)
     Axis.plot(1-FABRho, Cortical[:,:,2,2] / Cortical[:,:,0,0],
               color=(0,0,1), marker='o', linestyle='none',
               fillstyle='none')
@@ -276,13 +293,30 @@ def Main():
               linestyle='--', color=(0,0,1))
     Axis.plot(X_Trab, OLS(X_Trab, *P_Trab[0]),
               linestyle='--', color=(1,0,0))
-    Axis.plot(X, Function(X, *P[0]),
-              linestyle='--', color=(0,0,0), label='Fit')
+    # Axis.plot(X, Function(X, *P[0]),
+    #           linestyle='--', color=(0,0,0), label='Fit')
+    Axis.plot([], linestyle='--', color=(0,0,0), label='Fit')
     plt.xlabel('Porosity (-)')
     plt.ylabel('Stiffness Ratio (-)')
     plt.legend(loc='upper left')
     plt.show(Figure)
     
+    Figure, Axis = plt.subplots(1,1, dpi=192)
+    Axis.plot(1-FABRho, Cortical[:,:,0,0], color=(1,0,0), marker='o', linestyle='none', fillstyle='none')
+    Axis.plot(1-FABRho, Cortical[:,:,1,1], color=(0,0,1), marker='o', linestyle='none', fillstyle='none')
+    Axis.plot(1-FABRho, Cortical[:,:,2,2], color=(0,0,0), marker='o', linestyle='none', fillstyle='none')
+    Axis.plot(1-BVTV, Stiffness[:,0,0], color=(1,0,0), marker='^', linestyle='none', fillstyle='none')
+    Axis.plot(1-BVTV, Stiffness[:,1,1], color=(0,0,1), marker='^', linestyle='none', fillstyle='none')
+    Axis.plot(1-BVTV, Stiffness[:,2,2], color=(0,0,0), marker='^', linestyle='none', fillstyle='none')
+    Axis.plot([], linestyle='none', marker='o', color=(0.5,0.5,0.5), fillstyle='none', label='Cortical')
+    Axis.plot([], linestyle='none', marker='^', color=(0.5,0.5,0.5), fillstyle='none', label='Trabecular')
+    Axis.plot([], color=(1,0,0), label='S$_{11}$')
+    Axis.plot([], color=(0,0,1), label='S$_{22}$')
+    Axis.plot([], color=(0,0,0), label='S$_{33}$')
+    plt.xlabel('Porosity (-)')
+    plt.ylabel('Stiffness (MPa)')
+    plt.legend(loc='upper right')
+    plt.show(Figure)
     
     return
 

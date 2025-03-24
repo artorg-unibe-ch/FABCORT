@@ -48,6 +48,6 @@ class Read():
 
         for i in range(6):
             for j in range(6):
-                ComplianceMatrix[i,j] = np.float(Lines[Index+4+i].split()[j])
+                ComplianceMatrix[i,j] = float(Lines[Index+4+i].split()[j])
 
         return ComplianceMatrix

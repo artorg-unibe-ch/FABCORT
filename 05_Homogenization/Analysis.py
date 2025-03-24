@@ -696,6 +696,15 @@ def Main():
     mIsotropic = np.mean(Isotropic, axis=1)
     mTransverse = np.mean(Transverse, axis=1)
 
+    Figure, Axis = plt.subplots(1,1, dpi=192)
+    Axis.plot(1-BVTV, Fabric[:,0], linestyle='none', marker='o', color=(1,0,0), label='m$_1$')
+    Axis.plot(1-BVTV, Fabric[:,1], linestyle='none', marker='o', color=(0,0,1), label='m$_2$')
+    Axis.plot(1-BVTV, Fabric[:,2], linestyle='none', marker='o', color=(0,0,0), label='m$_3$')
+    Axis.set_xlabel(r'1-$\rho$ (-)')
+    Axis.set_ylabel('Fabric eigenvalues (-)')
+    plt.legend()
+    plt.show(Figure)
+
     # Plot fabric eigen values distribution
     BoxPlot([[F[0] for F in Fabric], [F[1] for F in Fabric], [F[2] for F in Fabric]],
             ['', 'Fabric Eigenvalues'], SetsLabels=['$m_1$', '$m_2$', '$m_3$'],
