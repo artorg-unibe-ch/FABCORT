@@ -1,0 +1,351 @@
+%% 
+%% Copyright 2019-2020 Elsevier Ltd
+%% 
+%% This file is part of the 'CAS Bundle'.
+%% --------------------------------------
+%% 
+%% It may be distributed under the conditions of the LaTeX Project Public
+%% License, either version 1.2 of this license or (at your option) any
+%% later version.  The latest version of this license is in
+%%    http://www.latex-project.org/lppl.txt
+%% and version 1.2 or later is part of all distributions of LaTeX
+%% version 1999/12/01 or later.
+%% 
+%% The list of all files belonging to the 'CAS Bundle' is
+%% given in the file `manifest.txt'.
+%% 
+%% Template article for cas-dc documentclass for 
+%% double column output.
+
+% \documentclass[a4paper,fleqn]{cas-dc}
+\documentclass[a4paper,fleqn]{DC_ArtStyle}
+% \documentclass[]{interact}
+
+% \usepackage[authoryear,longnamesfirst]{natbib}
+% \usepackage[authoryear]{natbib}
+\usepackage[numbers]{natbib}
+\usepackage{lipsum}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{siunitx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{rotating}
+\usepackage{float}
+\usepackage{multicol}
+\usepackage{pdfpages}
+\usepackage[normalem]{ulem}
+\usepackage[justification=centering]{caption}
+
+
+\newcommand{\abbreviations}[1]{%
+	\nonumnote{\textit{Abbreviations:\enspace}#1}}
+
+\setlength{\parindent}{0pt}
+
+\begin{document}
+	\let\WriteBookmarks\relax
+	\def\floatpagepagefraction{1}
+	\def\textpagefraction{.001}
+	\shorttitle{Fabric-Elasticity Property Relationships of the Human Cortical Femur}
+	\shortauthors{Simon et~al.}
+	
+	\title[mode = title]{Fabric-Elasticity Property Relationships of the Human Cortical Femur}
+	
+	% Autors
+	\author{Mathieu Simon}
+	\ead{mathieu.simon@artorg.unibe.ch}
+
+    \author{Gabriela Gerber}
+    
+    \author{Simone Poncioni}
+
+	\author{Yvan Gugler}
+
+	\author{Kurt Lippuner}
+
+	\author{Philippe Zysset}
+	\ead{philippe.zysset@artorg.unibe.ch}
+
+	
+	% Adresses
+	\address{ARTORG Centre for Biomedical Engineering Research, University of Bern, Bern, Switzerland}
+	
+	% Abbreviations
+	\abbreviations{%
+		ROI, region of interest;
+		\textmu CT, micro-computed tomography;
+		}
+	
+	% Footnotes
+	
+	%
+	%
+	%
+	% ABSTRACT
+	%
+	%
+	%
+	
+	\begin{abstract}
+		Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
+		Utpurus elit, vestibulum ut, placerat ac, adipiscing vitae, felis.
+		Curabitur dictum gravida mauris.
+		Nam arcu libero, nonummy eget, consectetuer id, vulputate a, magna.
+		Donec vehicula augue eu neque.
+		Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
+		Mauris ut leo. Cras viverra metus rhoncus sem.
+		\\[0.5em]
+		Nulla et ectus vestibulum urna fringilla ultrices.
+		Phasellus eu tellus	sit amet tortor gravida placerat.
+		Integer sapien est, iaculis	in, pretium quis, viverra ac, nunc.
+		Praesent eget sem vel leo ultrices bibendum.
+		Aenean faucibus. Morbi dolor nulla,	malesuada eu, pulvinar at, mollis ac, nulla.
+		Curabitur auctor semper nulla.
+		Donec varius orci eget risus.
+		Duis nibh mi, congue eu, accumsan eleifend, sagittis quis, diam.
+		Duis eget orci sit amet orci dignissim rutrum.
+		\\[0.5em]
+		Nam dui ligula, fringilla a, euismod sodales, sollicitudin vel, wisi.
+		Morbi auctor lorem non justo.
+		Nam lacus libero, pretium at, lobortis vitae, ultricies et, tellus.
+		Donec aliquet, tortor sed accumsan bibendum, erat ligula aliquet magna, vitae ornare odio metus a mi.
+		Morbi ac orci et nisl hendrerit mollis.
+		Suspendisse ut massa.
+		Cras nec ante.
+		Pellentesque a nulla.
+		Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+		Aliquam tincidunt urna.
+		Nulla ullamcorper vestibulum turpis.
+		Pellentesque cursus luctus mauris.
+    \end{abstract}
+	
+	\begin{keywords}
+		Bone \sep%
+		Fabric \sep%
+		Elasticity \sep%
+	\end{keywords}
+	
+
+	\begin{NoHyper}
+		\maketitle
+	\end{NoHyper}
+	
+	%
+	%
+	%
+	% INTRO
+	%
+	%
+	%
+	
+	\section{Introduction}
+	Bone is a hierarchical material\dots
+	\subsection{Bone structure}
+	\begin{itemize}
+		\item Bone composition
+		\item Mineralised collagen fibrils
+		\item Lamellar bone
+		\item Osteon
+		\item Cortical bone
+		\item Trabecula
+		\item Trabecular bone
+		\item Full bone
+	\end{itemize}
+	\subsection{Mechanical testing}
+	\begin{itemize}
+		\item Nanoindentation
+		\item Resonant ultrasound spectroscopy
+		\item Full section compression
+	\end{itemize}
+	\subsection{Imaging}
+	\begin{itemize}
+		\item Micro-computed tomography
+		\item High-resolution peripheral quantitative computed tomography
+		\item Computed tomography
+	\end{itemize}
+	\subsection{Bone Properties Estimation}
+	\begin{itemize}
+		\item Micro finite element analysis
+		\item Density and fabric
+		\item Homogenised finite element analysis
+	\end{itemize}
+	The aim of the present study is to investigate the influence of the bone matrix properties and microstructure on the mechanical properties of human bone.
+	The relationships between density, fabric and mechanics are presented from the bone matrix (bone of full density) down to the low density of trabecular bone with a strong focus on the cortical bone.
+	Additionally to relationships description, the ojective is to provide material constants for bone properties estimation.
+
+	%
+	%
+	%
+	% METHODS
+	%
+	%
+	%
+	
+	\section{Material and Methods}
+	\subsection{Theorical Model}
+	\begin{itemize}
+		\item Density-elasticity relationships
+		\item Fabric-elasticity relationships
+	\end{itemize}
+
+	\subsection{Bone Experimental Properties}
+	Lamellar bone
+	\begin{itemize}
+		\item Nanoindentation data
+		\item Virtual fabric
+	\end{itemize}
+
+	Cortical bone
+	\begin{itemize}
+		\item Samples
+		\item Micro-CT
+		\item RUS data
+	\end{itemize}
+	In the present study:
+	\begin{itemize}
+		\item Downsampling factor 2
+		\item 16x 1mm\textsuperscript{3} Relationships
+		\item Isotropic vs transverse isotropic material
+		\item Average $\mathbb{S}$ per sample
+	\end{itemize}
+
+	Trabecular bone
+	\begin{abstract}
+		\item Trabecula nanoindentation data
+		\item Studies giving mechanical data
+	\end{abstract}
+	
+	%
+	%
+	%
+	% RESULTS
+	%
+	%
+	%
+
+	\section{Results}
+	\begin{figure*}
+		\includegraphics[width=\linewidth]{Fabric}
+	\end{figure*}
+	
+	\begin{table*}
+		\resizebox{\linewidth}{!}{%
+		\begin{tabular}{l|c|c|c|c|c|c|c}
+			Material & 	$\lambda{0}$ & $\lambda_{0}'$ & $\mu_{0}$ & k & l & R$^2$ & NE \\
+			\hline
+			Isotropic & 5170 [4982 - 5359] & 5092 [5055 - 5129] & 3860 [3825 - 3895] & 2.13 [2.07 - 2.18] & 0.08 [0.07 - 0.09] & 0.99 & 0.04 \\
+			Transverse isotropic & 11150 [10761 - 11540] & 11017 [10921 - 11114] & 6158 [6091 - 6225] & 2.20 [2.14 - 2.27] & 0.42 [0.41 - 0.43] & 0.99 & 0.05 \\
+			Isotropic & 4660 [4385 - 4936] & 4590 [4541 - 4638] & 3479 [3428 - 3531] & 1.0 & 0.09 [0.07 - 0.11] & 0.96 & 0.07 \\
+			Transverse isotropic & 9978 [9456 - 10504] & 9860 [9745 - 9975] & 5511 [5422 - 5602] & 1.0 & 0.42 [0.40 - 0.44] & 0.95 & 0.08 \\
+			Isotropic & 5601 [4111 - 7116] & 5516 [5227 - 5821] & 4181 [3909 - 4472] & 2.0 [1.61 - 2.38] & 1.0 & 0.61 & 0.40 \\
+			Transverse isotropic & 11649 [10266 - 13048] & 11511 [11173 - 11858] & 6434 [6199 - 6678] & 2.26 [2.05 - 2.48] & 1.0 & 0.85 & 0.25 \\
+			\hline
+		\end{tabular}}
+	\end{table*}
+
+	\begin{figure*}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{Elasticity_IsoRUS}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{Elasticity_TraRUS}
+		\end{subfigure}
+	\end{figure*}
+
+	\begin{figure}
+		\includegraphics[width=\linewidth]{AnisotropyBVTV}
+	\end{figure}
+	
+	%
+	%
+	%
+	% DISCUSSION
+	%
+	%
+	%
+	
+	\section{Discussion and Conclusion}
+	
+	%
+	%
+	%
+	% ACKNOWLEGMENTS
+	%
+	%
+	%
+	
+	\section*{Declaration of competing interest}
+	We wish to confirm that there are no known conflicts of interest associated with this publication and there has been no significant financial support for this work that could have influenced its outcome.
+	
+	\section*{Funding}
+	This work was funded by the Swiss National Science Foundation (SNSF), grant number 200365.
+
+	\section*{Data availability statement}
+	The data that support the findings of this study are available on request. The data are not publicly available due to privacy/ethical restrictions. The scripts used for the analyses performed in the present study are available on Github: \url{https://github.com/artorg-unibe-ch/FABTIB}
+	
+	\section*{Research ethics}
+	We further confirm that any aspect of the work covered in this manuscript that has involved human patients has been conducted with the ethical approval of all relevant bodies and that such approvals are acknowledged within the manuscript.
+	
+	\section*{CRediT author statement}
+	\textbf{Mathieu Simon:} Data Curation, Formal analysis, Investigation, Methodology, Software, Visualization, Writing - original draft.
+	\textbf{Philippe Zysset:} Conceptualization, Funding acquisition, Methodology, Project administration, Resources, Supervision, Validation, Writing - review and editing.
+	
+	%
+	%
+	%
+	% Bibliography
+	%
+	%
+	%
+
+	% \clearpage
+	% Loading bibliography database
+	\nocite{*}
+	\bibliographystyle{BibStyle}
+	\bibliography{Bibliography}
+
+	% \bibliographystyle{elsarticle-num} 
+
+	% \begin{thebibliography}{65}
+	% \expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+	% \providecommand{\url}[1]{\texttt{#1}}
+	% \providecommand{\href}[2]{#2}
+	% \providecommand{\path}[1]{#1}
+	% \providecommand{\DOIprefix}{doi:}
+	% \providecommand{\ArXivprefix}{arXiv:}
+	% \providecommand{\URLprefix}{URL: }
+	% \providecommand{\Pubmedprefix}{pmid:}
+	% \providecommand{\doi}[1]{\href{http://dx.doi.org/#1}{\path{#1}}}
+	% \providecommand{\Pubmed}[1]{\href{pmid:#1}{\path{#1}}}
+	% \providecommand{\bibinfo}[2]{#2}
+	% \ifx\xfnm\relax \def\xfnm[#1]{\unskip,\space#1}\fi
+	% %Type = Article
+	% \bibitem[{Bala and Seeman(2015)}]{Bala2015}
+	% \bibinfo{author}{Bala, Y.}, \bibinfo{author}{Seeman, E.}, \bibinfo{year}{2015}.
+	% \newblock \bibinfo{title}{Bone's material constituents and their contribution
+	% 	to bone strength in health, disease, and treatment}.
+	% \newblock \bibinfo{journal}{Calcified Tissue International 2015 97:3}
+	% 	\bibinfo{volume}{97}, \bibinfo{pages}{308--326}.
+	% \newblock \URLprefix
+	% 	\url{https://link.springer.com/article/10.1007/s00223-015-9971-y},
+	% 	\DOIprefix\doi{10.1007/S00223-015-9971-Y}.
+	
+	% \end{thebibliography}
+
+	%
+	%
+	%
+	% Appendix
+	%
+	%
+	%
+
+	\clearpage
+	\appendix
+	
+	
+\end{document}
