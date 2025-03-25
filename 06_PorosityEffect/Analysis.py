@@ -30,6 +30,39 @@ def PlotFabric(eValuesCort, eVectorsCort, eValuesTrab, eVectorsTrab):
 
         # Iterate for each plane
         e1s, e2s, e3s = [], [], []
+
+        for eVal, eVec in zip(eValuesTrab, eVectorsTrab):
+
+            # Build fabric tensor
+            M = Tensor.Fabric(eVal, eVec)
+
+            # Project to normal plane
+            eVals, eVecs = Tensor.ProjectEllipsoid(M, Normal)
+
+            # Generate points for the ellipse
+            Theta = np.linspace(0, 2 * np.pi, 100)
+            e1 = eVals[0] * np.cos(Theta)
+            e2 = eVals[1] * np.sin(Theta)
+
+            # Rotate the points
+            R = np.column_stack([eVecs[0],eVecs[1]])
+            e1e2e3 = R @ np.vstack([e1,e2])
+
+            # Plot lines
+            if i == 0:
+                Axis[i].plot(e1e2e3[1], e1e2e3[2], color=(1,0,0,0.2))
+            elif i == 1:
+                Axis[i].plot(e1e2e3[0], e1e2e3[2], color=(1,0,0,0.2))
+            else:
+                Axis[i].plot(e1e2e3[0], e1e2e3[1], color=(1,0,0,0.2))
+
+
+            # Store values
+            e1s.append(e1e2e3[0])
+            e2s.append(e1e2e3[1])
+            e3s.append(e1e2e3[2])
+
+
         for eVal, eVec in zip(eValuesCort, eVectorsCort):
 
             # Build fabric tensor
@@ -67,39 +100,6 @@ def PlotFabric(eValuesCort, eVectorsCort, eValuesTrab, eVectorsTrab):
         Std1 = np.std(e1s, axis=0)
         Std2 = np.std(e2s, axis=0)
         Std3 = np.std(e3s, axis=0)
-
-        for eVal, eVec in zip(eValuesTrab, eVectorsTrab):
-
-            # Build fabric tensor
-            M = Tensor.Fabric(eVal, eVec)
-
-            # Project to normal plane
-            eVals, eVecs = Tensor.ProjectEllipsoid(M, Normal)
-
-            # Generate points for the ellipse
-            Theta = np.linspace(0, 2 * np.pi, 100)
-            e1 = eVals[0] * np.cos(Theta)
-            e2 = eVals[1] * np.sin(Theta)
-
-            # Rotate the points
-            R = np.column_stack([eVecs[0],eVecs[1]])
-            e1e2e3 = R @ np.vstack([e1,e2])
-
-            # Plot lines
-            if i == 0:
-                Axis[i].plot(e1e2e3[1], e1e2e3[2], color=(1,0,0,0.2))
-            elif i == 1:
-                Axis[i].plot(e1e2e3[0], e1e2e3[2], color=(1,0,0,0.2))
-            else:
-                Axis[i].plot(e1e2e3[0], e1e2e3[1], color=(1,0,0,0.2))
-
-
-            # Store values
-            e1s.append(e1e2e3[0])
-            e2s.append(e1e2e3[1])
-            e3s.append(e1e2e3[2])
-
-
 
         # Plot the ellipse
         if i == 0:
@@ -202,6 +202,8 @@ def Main():
             # Symetrize matrix
             Cortical[f,r] = 1/2 * (Cortical[f,r] + Cortical[f,r].T)
 
+
+
     CortFab =Path(__file__).parents[1] / '05_Homogenization/Fabric'
     Folders = [F for F in CortFab.iterdir() if F.is_dir()]
     FABCORT = np.zeros((len(Folders), 16, 3))
@@ -230,24 +232,7 @@ def Main():
               color=(0,0,1), marker='o', linestyle='none')
     Axis.plot([], fillstyle='none', label='Trabecular',
               color=(1,0,0), marker='o', linestyle='none')
-    plt.xlabel('Porosity (-)')
-    plt.ylabel('Degree of Anisotropy (-)')
-    plt.legend(loc='upper left')
-    plt.show(Figure)
-
-    # Plot results
-    Figure, Axis = plt.subplots(1,1)
-    Axis.plot(1-FABRho, FABCORT[:,:,2] / FABCORT[:,:,0],
-              color=(0,0,1), marker='o', linestyle='none',
-              fillstyle='none')
-    Axis.plot(1-BVTV, eValues[:,2] / eValues[:,0],
-              color=(1,0,0), marker='o', linestyle='none',
-              fillstyle='none')
-    Axis.plot([], fillstyle='none', label='Cortical',
-              color=(0,0,1), marker='o', linestyle='none')
-    Axis.plot([], fillstyle='none', label='Trabecular',
-              color=(1,0,0), marker='o', linestyle='none')
-    plt.xlabel('Porosity (-)')
+    Axis.set_xlabel(r'1-$\rho$ (-)')
     plt.ylabel('Degree of Anisotropy (-)')
     plt.legend(loc='upper left')
     plt.show(Figure)
@@ -270,40 +255,38 @@ def Main():
     plt.show(Figure)
 
     # Plot fabric
-    PlotFabric(eValues, eVectors, FABCORT, CortVectors)
-
-
-    # Plot function
-    X = np.linspace(0.0, 1.0)
-    Y = 1 + np.exp(X*0.5)
-    Figure, Axis = plt.subplots(1,1)
-    Axis.plot(X,Y)
-    plt.show(Figure)
+    PlotFabric(FABCORT, CortVectors, eValues, eVectors)
 
     # Fit functions to data
+    Stiff = np.vstack([Stiffness[:,0,0], Stiffness[:,1,1], Stiffness[:,2,2]])
+    Max = np.argmax(Stiff, axis=0)
+    Min = np.argmin(Stiff, axis=0)
+    TrabRatio = [Stiffness[i,A,A] / Stiffness[i,I,I] for i,(A,I) in enumerate(zip(Max,Min))]
+
     def OLS(X, a, b):
         return a + b*X
     P_Cort = curve_fit(OLS, 1-FABRho.ravel(), Cortical[:,:,2,2].ravel() / Cortical[:,:,0,0].ravel())
-    X_Cort = np.linspace(0.0, 0.5)
-    P_Trab = curve_fit(OLS, 1-BVTV, Stiffness[:,2,2] / Stiffness[:,0,0])
-    X_Trab = np.linspace(0.5, 1.0)
+    X_Cort = np.linspace(0.0, max(1-FABRho.ravel()))
+    P_Trab = curve_fit(OLS, 1-BVTV, TrabRatio)
+    X_Trab = np.linspace(min(1-BVTV), 1.0)
 
     Phi = np.concatenate([1-FABRho.ravel(), 1-BVTV])
     Ratios = np.concatenate([Cortical[:,:,2,2].ravel() / Cortical[:,:,0,0].ravel(), Stiffness[:,2,2] / Stiffness[:,0,0]])
     def Function(X, a, b):
-        return a + np.exp(X*b)
+        return 1 + a*X**b
     P = curve_fit(Function, Phi, Ratios)
     X = np.linspace(0.0, 1.0)
+
 
     Figure, Axis = plt.subplots(1,1, dpi=192)
     Axis.plot(1-FABRho, Cortical[:,:,2,2] / Cortical[:,:,0,0],
               color=(0,0,1,0.2), marker='o', linestyle='none')
-    Axis.plot(1-BVTV, Stiffness[:,2,2] / Stiffness[:,0,0],
+    Axis.plot(1-BVTV, TrabRatio,
               color=(1,0,0,0.2), marker='o', linestyle='none')
-    Axis.plot([], fillstyle='none', label='Cortical',
-              color=(0,0,1), marker='o', linestyle='none')
-    Axis.plot([], fillstyle='none', label='Trabecular',
-              color=(1,0,0), marker='o', linestyle='none')
+    Axis.plot([], label='Cortical',
+              color=(0,0,1,0.2), marker='o', linestyle='none')
+    Axis.plot([], label='Trabecular',
+              color=(1,0,0,0.2), marker='o', linestyle='none')
     Axis.plot(X_Cort, OLS(X_Cort, *P_Cort[0]),
               linestyle='--', color=(0,0,1))
     Axis.plot(X_Trab, OLS(X_Trab, *P_Trab[0]),
@@ -311,24 +294,31 @@ def Main():
     # Axis.plot(X, Function(X, *P[0]),
     #           linestyle='--', color=(0,0,0), label='Fit')
     Axis.plot([], linestyle='--', color=(0,0,0), label='Fit')
-    plt.xlabel('Porosity (-)')
+    Axis.set_xlabel(r'1-$\rho$ (-)')
     plt.ylabel('Stiffness Ratio (-)')
     plt.legend(loc='upper left')
     plt.show(Figure)
     
     Figure, Axis = plt.subplots(1,1, dpi=192)
-    Axis.plot(1-FABRho, Cortical[:,:,0,0], color=(1,0,0), marker='o', linestyle='none', fillstyle='none')
-    Axis.plot(1-FABRho, Cortical[:,:,1,1], color=(0,0,1), marker='o', linestyle='none', fillstyle='none')
-    Axis.plot(1-FABRho, Cortical[:,:,2,2], color=(0,0,0), marker='o', linestyle='none', fillstyle='none')
-    Axis.plot(1-BVTV, Stiffness[:,0,0], color=(1,0,0), marker='^', linestyle='none', fillstyle='none')
-    Axis.plot(1-BVTV, Stiffness[:,1,1], color=(0,0,1), marker='^', linestyle='none', fillstyle='none')
-    Axis.plot(1-BVTV, Stiffness[:,2,2], color=(0,0,0), marker='^', linestyle='none', fillstyle='none')
-    Axis.plot([], linestyle='none', marker='o', color=(0.5,0.5,0.5), fillstyle='none', label='Cortical')
-    Axis.plot([], linestyle='none', marker='^', color=(0.5,0.5,0.5), fillstyle='none', label='Trabecular')
-    Axis.plot([], color=(1,0,0), label='S$_{11}$')
-    Axis.plot([], color=(0,0,1), label='S$_{22}$')
-    Axis.plot([], color=(0,0,0), label='S$_{33}$')
-    plt.xlabel('Porosity (-)')
+    for i in range(6):
+        for j in range(6):
+            if i < 3 and i < 3:
+                if i == j:
+                    Marker = 's'
+                else:
+                    Marker = 'o'
+            elif i == j:
+                Marker = '^'
+
+            Axis.plot(1-FABRho, Cortical[:,:,i,j], color=(0,0,1,0.2), marker=Marker, linestyle='none')
+            Axis.plot(1-BVTV, Stiffness[:,i,j], color=(1,0,0,0.2), marker=Marker, linestyle='none')
+
+    Axis.plot([], color=(0,0,1), label='Cortical')
+    Axis.plot([], color=(1,0,0), label='Trabecular')
+    Axis.plot([], linestyle='none', marker='s', color=(0,0,0), label=r'$\lambda_{ii}$')
+    Axis.plot([], linestyle='none', marker='o', color=(0,0,0), label=r'$\lambda_{ij}$')
+    Axis.plot([], linestyle='none', marker='^', color=(0,0,0), label=r'$\mu_{ij}$')
+    Axis.set_xlabel(r'1-$\rho$ (-)')
     plt.ylabel('Stiffness (MPa)')
     plt.legend(loc='upper right')
     plt.show(Figure)

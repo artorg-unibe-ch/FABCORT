@@ -155,8 +155,10 @@ def Homogenization_OLS(X, Y, Alpha=0.95, FName=''):
 
     # Plots
     DPI = 500
-    # SMax = max([Y_Obs.max(), Y_Fit.max()]) * 5
-    # SMin = min([Y_Obs.min(), Y_Fit.min()]) / 5
+    # SMax = max([Y_Obs.max(), Y_Fit.max()]) * 1.2
+    # SMin = min([Y_Obs.min(), Y_Fit.min()]) / 1.2
+    SMax = 3.5*1E4
+    SMin = 1.75*1E3
     Colors=[(0,0,1),(0,1,0),(1,0,0)]
 
     Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
@@ -177,8 +179,8 @@ def Homogenization_OLS(X, Y, Alpha=0.95, FName=''):
     Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
     Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
     Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
-    # Axes.set_xlim([SMin, SMax])
-    # Axes.set_ylim([SMin, SMax])
+    Axes.set_xlim([SMin, SMax])
+    Axes.set_ylim([SMin, SMax])
     plt.xscale('log')
     plt.yscale('log')
     plt.legend(loc='upper left')
@@ -335,12 +337,9 @@ def ExperivementVsSimulation_OLS(X, Y, Alpha=0.95, FName=''):
 
     Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
     # Axes.fill_between(np.array(X).ravel(), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
-    Axes.plot(X[ii, 1], Y_Obs[ii],
-              color=Colors[0], linestyle='none', marker='s')
-    Axes.plot(X[ij, 1], Y_Obs[ij],
-              color=Colors[1], linestyle='none', marker='o')
-    Axes.plot(X[jj, 1], Y_Obs[jj],
-              color=Colors[2], linestyle='none', marker='^')
+    Axes.plot(X[ii, 1], Y_Obs[ii], color=Colors[0], linestyle='none', marker='s')
+    Axes.plot(X[ij, 1], Y_Obs[ij], color=Colors[1], linestyle='none', marker='o')
+    Axes.plot(X[jj, 1], Y_Obs[jj], color=Colors[2], linestyle='none', marker='^')
     Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
     Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
     Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
@@ -696,6 +695,14 @@ def Main():
     mIsotropic = np.mean(Isotropic, axis=1)
     mTransverse = np.mean(Transverse, axis=1)
 
+    # Filter out sample with BV/TV < 0.7
+    F = BVTV > 0.7
+    mIsotropic = mIsotropic[F]
+    mTransverse = mTransverse[F]
+    RUS = RUS[F]
+    Fabric = Fabric[F]
+    BVTV = BVTV[F]
+
     Figure, Axis = plt.subplots(1,1, dpi=192)
     Axis.plot(1-BVTV, Fabric[:,0], linestyle='none', marker='o', color=(1,0,0), label='m$_1$')
     Axis.plot(1-BVTV, Fabric[:,1], linestyle='none', marker='o', color=(0,0,1), label='m$_2$')
@@ -711,9 +718,9 @@ def Main():
             FigName=Path(__file__).parent / 'Plots/FabricEigenvalues.png')
 
     # Compare with RUS
-    X = np.matrix(np.ones((len(cFolders)*12, 2)))
-    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
+    X = np.matrix(np.ones((len(BVTV)*12, 2)))
+    Y = np.matrix(np.zeros((len(BVTV)*12, 1)))
+    for f in range(len(BVTV)):
         
         Start, Stop = 12*f, 12*(f+1)
         Y[Start:Stop] = [[RUS[f][0,0]],
@@ -745,7 +752,7 @@ def Main():
     FName = Path(__file__).parent / 'Plots/Elasticity_IsoRUS.png'
     Parameters, R2adj, NE = ExperivementVsSimulation_OLS(X, Y*1E3, FName=str(FName))
 
-    for f in range(len(cFolders)):
+    for f in range(len(BVTV)):
         Start, Stop = 12*f, 12*(f+1)
         X[Start:Stop,1] = [[mTransverse[f][0,0]],
                            [mTransverse[f][0,1]],
@@ -766,21 +773,20 @@ def Main():
     # Plot anisotropy vs BVTV
     Figure, Axis = plt.subplots(1,1, dpi=192)
     Colors = [(0,0,0), (1,0,0), (0,0,1), (1,0,1)]
-    Labels = ['Fabric $m_3 / m_1$', 'Isotropic $E_{33} / E_{11}$', 'Transverse $E_{33} / E_{11}$', 'RUS $E_{33} / E_{11}$']
-    F = BVTV > 0.7
-    X = np.ones((len(BVTV),2), float)[F]
-    X[:,1] = 1-BVTV[F]
+    Labels = ['Fabric $m_3 / m_1$', 'Isotropic $S_{33} / S_{11}$', 'Transverse $S_{33} / S_{11}$', 'RUS $S_{33} / S_{11}$']
+    X = np.ones((len(BVTV),2), float)
+    X[:,1] = 1-BVTV
     for i, V in enumerate([Fabric, mIsotropic, mTransverse, RUS]):
             if i == 0:
-                Y = np.array([v[2] / v[0] for v in V[F]])
+                Y = np.array([v[2] / v[0] for v in V])
             else:
-                Y = np.array([v[2,2] / v[0,0] for v in V[F]])
+                Y = np.array([v[2,2] / v[0,0] for v in V])
             B = SimpleOLS(np.matrix(X), np.matrix(Y).T)
-            xLine = 1-np.linspace(BVTV[F].min(), BVTV.max(), 10)
+            xLine = 1-np.linspace(BVTV.min(), BVTV.max(), 10)
             yLine = B[0,0] + B[1,0] * xLine
             Axis.plot(X[:,1], Y, label=Labels[i], linestyle='none', marker='o', color=Colors[i])
             Axis.plot(xLine, yLine, linestyle='--', color=Colors[i], linewidth=1)
-            Axis.text(0.225, 2.2-0.2*i, f'x = {B[1,0]:.2f}', color=Colors[i])
+            Axis.text(0.225, yLine[0], f'x = {B[1,0]:.2f}', color=Colors[i])
     Axis.set_xlabel(r'1-$\rho$ (-)')
     # Axis.set_ylim([0.95, 2.85])
     Axis.set_ylabel('Degree of Anisotropy (-)')
@@ -789,9 +795,9 @@ def Main():
     plt.show(Figure)
 
     # Fit homogenization with theorical model
-    X = np.matrix(np.zeros((len(cFolders)*12, 5)))
-    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
+    X = np.matrix(np.zeros((len(BVTV)*12, 5)))
+    Y = np.matrix(np.zeros((len(BVTV)*12, 1)))
+    for f in range(len(BVTV)):
         
         Start, Stop = 12*f, 12*(f+1)
         m1, m2, m3 = Fabric[f]
@@ -826,8 +832,8 @@ def Main():
     FName = Path(__file__).parent / 'Plots/Regression_Iso.png'
     Parameters, R2adj, NE = Homogenization_OLS(X, np.log(Y), FName=str(FName))
 
-    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
+    Y = np.matrix(np.zeros((len(BVTV)*12, 1)))
+    for f in range(len(BVTV)):
         
         Start, Stop = 12*f, 12*(f+1)
 
@@ -1080,9 +1086,9 @@ def Main():
 
 
     # Force k == 1.0
-    X = np.matrix(np.zeros((len(cFolders)*12, 5)))
-    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
+    X = np.matrix(np.zeros((len(BVTV)*12, 5)))
+    Y = np.matrix(np.zeros((len(BVTV)*12, 1)))
+    for f in range(len(BVTV)):
         
         Start, Stop = 12*f, 12*(f+1)
         m1, m2, m3 = Fabric[f]
@@ -1117,9 +1123,9 @@ def Main():
     X = np.matrix(np.hstack([X[:,:3],X[:,4:]]))
     Parameters, R2adj, NE = Compare_l(X, Y, 1.0)
     
-    X = np.matrix(np.zeros((len(cFolders)*12, 5)))
-    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
+    X = np.matrix(np.zeros((len(BVTV)*12, 5)))
+    Y = np.matrix(np.zeros((len(BVTV)*12, 1)))
+    for f in range(len(BVTV)):
         Start, Stop = 12*f, 12*(f+1)
 
         # Build system and enforce k = 1
@@ -1154,9 +1160,9 @@ def Main():
 
 
     # Force l == 1.0
-    X = np.matrix(np.zeros((len(cFolders)*12, 5)))
-    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
+    X = np.matrix(np.zeros((len(BVTV)*12, 5)))
+    Y = np.matrix(np.zeros((len(BVTV)*12, 1)))
+    for f in range(len(BVTV)):
         
         Start, Stop = 12*f, 12*(f+1)
         m1, m2, m3 = Fabric[f]
@@ -1191,9 +1197,9 @@ def Main():
     X = X[:,:4]
     Parameters, R2adj, NE = Compare_l(X, Y, 1.0)
     
-    X = np.matrix(np.zeros((len(cFolders)*12, 5)))
-    Y = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
+    X = np.matrix(np.zeros((len(BVTV)*12, 5)))
+    Y = np.matrix(np.zeros((len(BVTV)*12, 1)))
+    for f in range(len(BVTV)):
         Start, Stop = 12*f, 12*(f+1)
 
         # Build system and enforce k = 1
