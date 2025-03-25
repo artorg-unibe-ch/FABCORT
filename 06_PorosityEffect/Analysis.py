@@ -235,6 +235,23 @@ def Main():
     plt.legend(loc='upper left')
     plt.show(Figure)
 
+    # Plot results
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(1-FABRho, FABCORT[:,:,2] / FABCORT[:,:,0],
+              color=(0,0,1), marker='o', linestyle='none',
+              fillstyle='none')
+    Axis.plot(1-BVTV, eValues[:,2] / eValues[:,0],
+              color=(1,0,0), marker='o', linestyle='none',
+              fillstyle='none')
+    Axis.plot([], fillstyle='none', label='Cortical',
+              color=(0,0,1), marker='o', linestyle='none')
+    Axis.plot([], fillstyle='none', label='Trabecular',
+              color=(1,0,0), marker='o', linestyle='none')
+    plt.xlabel('Porosity (-)')
+    plt.ylabel('Degree of Anisotropy (-)')
+    plt.legend(loc='upper left')
+    plt.show(Figure)
+
     Figure, Axis = plt.subplots(1,1, dpi=192)
     Axis.plot(1-FABRho.ravel(), FABCORT[...,0].ravel(), linestyle='none', marker='o', color=(1,0,0), fillstyle='none')
     Axis.plot(1-FABRho.ravel(), FABCORT[...,1].ravel(), linestyle='none', marker='o', color=(0,0,1), fillstyle='none')
@@ -280,11 +297,9 @@ def Main():
 
     Figure, Axis = plt.subplots(1,1, dpi=192)
     Axis.plot(1-FABRho, Cortical[:,:,2,2] / Cortical[:,:,0,0],
-              color=(0,0,1), marker='o', linestyle='none',
-              fillstyle='none')
+              color=(0,0,1,0.2), marker='o', linestyle='none')
     Axis.plot(1-BVTV, Stiffness[:,2,2] / Stiffness[:,0,0],
-              color=(1,0,0), marker='o', linestyle='none',
-              fillstyle='none')
+              color=(1,0,0,0.2), marker='o', linestyle='none')
     Axis.plot([], fillstyle='none', label='Cortical',
               color=(0,0,1), marker='o', linestyle='none')
     Axis.plot([], fillstyle='none', label='Trabecular',
@@ -317,6 +332,22 @@ def Main():
     plt.ylabel('Stiffness (MPa)')
     plt.legend(loc='upper right')
     plt.show(Figure)
+
+    Figure = plt.figure()
+    Axis = Figure.add_subplot(projection='3d')
+    Axis.scatter(1-FABRho, FABCORT[:,:,2] / FABCORT[:,:,0], Cortical[:,:,2,2] / Cortical[:,:,0,0],
+              color=(0,0,1), marker='o')
+    Axis.scatter(1-BVTV, eValues[:,2] / eValues[:,0], Stiffness[:,2,2] / Stiffness[:,0,0],
+              color=(1,0,0), marker='o')
+    # Axis.plot([], fillstyle='none', label='Cortical',
+    #           color=(0,0,1), marker='o', linestyle='none')
+    # Axis.plot([], fillstyle='none', label='Trabecular',
+    #           color=(1,0,0), marker='o', linestyle='none')
+    Axis.set_xlabel('Porosity (-)')
+    Axis.set_ylabel('m$_3$ / m$_1$ (-)')
+    Axis.set_zlabel('S$_{33}$ / S$_{11}$ (-)')
+    # plt.legend(loc='upper left')
+    plt.show()
     
     return
 
