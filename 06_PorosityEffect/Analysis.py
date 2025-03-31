@@ -13,6 +13,7 @@ __version__ = '1.0'
 #%% Imports
 
 import sys
+import argparse
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -23,6 +24,7 @@ sys.path.append(str(Path(__file__).parents[1]))
 from Utils import Read, Tensor
 
 #%% Functions
+
 def PlotFabric(eValuesCort, eVectorsCort, eValuesTrab, eVectorsTrab):
 
     Figure, Axis = plt.subplots(1,3, figsize=(10,5), dpi=200, sharex=True, sharey=True)
@@ -237,13 +239,26 @@ def Main():
     plt.legend(loc='upper left')
     plt.show(Figure)
 
+    def OLS(X, a, b):
+        return a + b*X
+    Porosity = np.sort(np.concatenate([1-FABRho.ravel(), 1-BVTV]))
+    m1s = np.hstack([FABCORT[...,0].ravel(), eValues[:,0]])
+    m2s = np.hstack([FABCORT[...,1].ravel(), eValues[:,1]])
+    m3s = np.hstack([FABCORT[...,2].ravel(), eValues[:,2]])
+    P1 = curve_fit(OLS, (1-Porosity), m1s)
+    P2 = curve_fit(OLS, (1-Porosity), m2s)
+    P3 = curve_fit(OLS, (1-Porosity), m3s)
+
     Figure, Axis = plt.subplots(1,1, dpi=192)
-    Axis.plot(1-FABRho.ravel(), FABCORT[...,0].ravel(), linestyle='none', marker='o', color=(1,0,0), fillstyle='none')
-    Axis.plot(1-FABRho.ravel(), FABCORT[...,1].ravel(), linestyle='none', marker='o', color=(0,0,1), fillstyle='none')
-    Axis.plot(1-FABRho.ravel(), FABCORT[...,2].ravel(), linestyle='none', marker='o', color=(0,0,0), fillstyle='none')
-    Axis.plot(1-BVTV, eValues[:,0], linestyle='none', marker='^', color=(1,0,0), fillstyle='none')
-    Axis.plot(1-BVTV, eValues[:,1], linestyle='none', marker='^', color=(0,0,1), fillstyle='none')
-    Axis.plot(1-BVTV, eValues[:,2], linestyle='none', marker='^', color=(0,0,0), fillstyle='none')
+    Axis.plot(1-FABRho.ravel(), FABCORT[...,0].ravel(), linestyle='none', marker='o', color=(1,0,0,0.2), fillstyle='none')
+    Axis.plot(1-FABRho.ravel(), FABCORT[...,1].ravel(), linestyle='none', marker='o', color=(0,0,1,0.2), fillstyle='none')
+    Axis.plot(1-FABRho.ravel(), FABCORT[...,2].ravel(), linestyle='none', marker='o', color=(0,0,0,0.2), fillstyle='none')
+    Axis.plot(1-BVTV, eValues[:,0], linestyle='none', marker='^', color=(1,0,0,0.2), fillstyle='none')
+    Axis.plot(1-BVTV, eValues[:,1], linestyle='none', marker='^', color=(0,0,1,0.2), fillstyle='none')
+    Axis.plot(1-BVTV, eValues[:,2], linestyle='none', marker='^', color=(0,0,0,0.2), fillstyle='none')
+    Axis.plot(Porosity, OLS(1-Porosity, *P1[0]), linestyle='--', color=(1,0,0))
+    Axis.plot(Porosity, OLS(1-Porosity, *P2[0]), linestyle='--', color=(0,0,1))
+    Axis.plot(Porosity, OLS(1-Porosity, *P3[0]), linestyle='--', color=(0,0,0))
     Axis.plot([], linestyle='none', marker='o', color=(0.5,0.5,0.5), fillstyle='none', label='Cortical')
     Axis.plot([], linestyle='none', marker='^', color=(0.5,0.5,0.5), fillstyle='none', label='Trabecular')
     Axis.plot([], color=(1,0,0), label='m$_1$')
@@ -299,45 +314,87 @@ def Main():
     plt.legend(loc='upper left')
     plt.show(Figure)
     
-    Figure, Axis = plt.subplots(1,1, dpi=192)
+    # Investigate the effect of porosity on the stiffness tensor
+    Figure, Axis = plt.subplots(1,3, dpi=192, sharex=True, figsize=(12,4))
     for i in range(6):
         for j in range(6):
-            if i < 3 and i < 3:
+            if i < 3 and j < 3:
                 if i == j:
-                    Marker = 's'
+                    if i == 0:
+                        Cort = (0,1,1)
+                        Trab = (0.6,0,1)
+                        El = r'$\lambda_{11}$'
+                    elif i == 1:
+                        Cort = (0,0.6,1)
+                        Trab = (1,0,1)
+                        El = r'$\lambda_{22}$'
+                    else:
+                        Cort = (0,0,1)
+                        Trab = (1,0,0)
+                        El = r'$\lambda_{33}$'
+
+                    Axis[0].plot(1-FABRho, Cortical[:,:,i,j]/1E3,
+                                 color=Cort, marker='o', linestyle='none', fillstyle='none')
+                    Axis[0].plot(1-BVTV, Stiffness[:,i,j]/1E3,
+                                 color=Trab, marker='o', linestyle='none', fillstyle='none')
+                    Axis[0].plot([], label=El + ' Cortical',
+                                 color=Cort, marker='o', linestyle='none', fillstyle='none')
+                    Axis[0].plot([], label=El + ' Trabecular',
+                                 color=Trab, marker='o', linestyle='none', fillstyle='none')
                 else:
-                    Marker = 'o'
+                    if (i == 0 and j == 2) or (i == 2 and j == 0):
+                        Cort = (0,1,1)
+                        Trab = (0.6,0,1)
+                        El = r'$\lambda_{13}$'
+                    elif (i == 1 and j == 2) or (i == 2 and j == 1):
+                        Cort = (0,0.6,1)
+                        Trab = (1,0,1)
+                        El = r'$\lambda_{23}$'
+                    else:
+                        Cort = (0,0,1)
+                        Trab = (1,0,0)
+                        El = r'$\lambda_{12}$'
+                    Axis[1].plot(1-FABRho, Cortical[:,:,i,j]/1E3,
+                                 color=Cort, marker='o', linestyle='none', fillstyle='none')
+                    Axis[1].plot(1-BVTV, Stiffness[:,i,j]/1E3,
+                                 color=Trab, marker='o', linestyle='none', fillstyle='none')
+                    if (i == 0 and j == 1) or (i == 1 and j == 2) or (i == 2 and j == 0):
+                        Axis[1].plot([], label=El + ' Cortical',
+                                    color=Cort, marker='o', linestyle='none', fillstyle='none')
+                        Axis[1].plot([], label=El + ' Trabecular',
+                                    color=Trab, marker='o', linestyle='none', fillstyle='none')
             elif i == j:
-                Marker = '^'
-
-            Axis.plot(1-FABRho, Cortical[:,:,i,j], color=(0,0,1,0.2), marker=Marker, linestyle='none')
-            Axis.plot(1-BVTV, Stiffness[:,i,j], color=(1,0,0,0.2), marker=Marker, linestyle='none')
-
-    Axis.plot([], color=(0,0,1), label='Cortical')
-    Axis.plot([], color=(1,0,0), label='Trabecular')
-    Axis.plot([], linestyle='none', marker='s', color=(0,0,0), label=r'$\lambda_{ii}$')
-    Axis.plot([], linestyle='none', marker='o', color=(0,0,0), label=r'$\lambda_{ij}$')
-    Axis.plot([], linestyle='none', marker='^', color=(0,0,0), label=r'$\mu_{ij}$')
-    Axis.set_xlabel(r'1-$\rho$ (-)')
-    plt.ylabel('Stiffness (MPa)')
-    plt.legend(loc='upper right')
+                if i == 3:
+                    Cort = (0,1,1)
+                    Trab = (0.6,0,1)
+                    El = r'$\mu_{23}$'
+                elif i == 4:
+                    Cort = (0,0.6,1)
+                    Trab = (1,0,1)
+                    El = r'$\mu_{31}$'
+                else:
+                    Cort = (0,0,1)
+                    Trab = (1,0,0)
+                    El = r'$\mu_{12}$'
+                Axis[2].plot(1-FABRho, Cortical[:,:,i,j]/1E3,
+                                color=Cort, marker='o', linestyle='none', fillstyle='none')
+                Axis[2].plot(1-BVTV, Stiffness[:,i,j]/1E3,
+                                color=Trab, marker='o', linestyle='none', fillstyle='none')
+                Axis[2].plot([], label=El + ' Cortical',
+                                 color=Cort, marker='o', linestyle='none', fillstyle='none')
+                Axis[2].plot([], label=El + ' Trabecular',
+                                 color=Trab, marker='o', linestyle='none', fillstyle='none')
+            else:
+                continue
+    
+    Axis[0].legend(loc='upper right',  fontsize=9)
+    Axis[1].legend(loc='upper right',  fontsize=9)
+    Axis[2].legend(loc='upper right',  fontsize=9)
+    Axis[1].set_xlabel(r'1-$\rho$ (-)')
+    Axis[0].set_ylabel('Stiffness (GPa)')
     plt.show(Figure)
 
-    Figure = plt.figure()
-    Axis = Figure.add_subplot(projection='3d')
-    Axis.scatter(1-FABRho, FABCORT[:,:,2] / FABCORT[:,:,0], Cortical[:,:,2,2] / Cortical[:,:,0,0],
-              color=(0,0,1), marker='o')
-    Axis.scatter(1-BVTV, eValues[:,2] / eValues[:,0], Stiffness[:,2,2] / Stiffness[:,0,0],
-              color=(1,0,0), marker='o')
-    # Axis.plot([], fillstyle='none', label='Cortical',
-    #           color=(0,0,1), marker='o', linestyle='none')
-    # Axis.plot([], fillstyle='none', label='Trabecular',
-    #           color=(1,0,0), marker='o', linestyle='none')
-    Axis.set_xlabel('Porosity (-)')
-    Axis.set_ylabel('m$_3$ / m$_1$ (-)')
-    Axis.set_zlabel('S$_{33}$ / S$_{11}$ (-)')
-    # plt.legend(loc='upper left')
-    plt.show()
+
     
     return
 
