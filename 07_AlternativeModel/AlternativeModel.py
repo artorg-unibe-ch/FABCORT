@@ -26,6 +26,99 @@ from Utils import Read, Tensor
 
 #%% Functions
 
+def FitIsotropicModel(X, Y, Alpha=0.95, FName=''):
+
+    # Solve linear system
+    XTXi = np.linalg.inv(X.T * X)
+    B = XTXi * X.T * Y
+
+    # Compute residuals, variance, and covariance matrix
+    Y_Obs = np.exp(Y)
+    Y_Fit = np.exp(X * B)
+    Residuals = Y - X*B
+    DOFs = len(Y) - X.shape[1]
+    Sigma = Residuals.T * Residuals / DOFs
+    Cov = Sigma[0,0] * XTXi
+
+    # Compute B confidence interval
+    t_Alpha = t.interval(Alpha, DOFs)
+    B_CI_Low = B.T + t_Alpha[0] * np.sqrt(np.diag(Cov))
+    B_CI_Top = B.T + t_Alpha[1] * np.sqrt(np.diag(Cov))
+
+    # Store parameters in data frame
+    Parameters = pd.DataFrame(columns=['Lambda0','Mu0'])
+    Parameters.loc['Value'] = [np.exp(B[0,0]) - 2*np.exp(B[1,0]), np.exp(B[1,0])]
+    Parameters.loc['95% CI Low'] = [np.exp(B_CI_Low[0,0]) - 2*np.exp(B_CI_Top[0,1]), np.exp(B_CI_Low[0,1])]
+    Parameters.loc['95% CI Top'] = [np.exp(B_CI_Top[0,0]) - 2*np.exp(B_CI_Low[0,1]), np.exp(B_CI_Top[0,1])]
+
+    # Compute R2 and standard error of the estimate
+    RSS = np.sum([R**2 for R in Residuals])
+    SE = np.sqrt(RSS / DOFs)
+    TSS = np.sum([R**2 for R in (Y - Y.mean())])
+    RegSS = TSS - RSS
+    R2 = RegSS / TSS
+
+    # Compute R2adj and NE
+    R2adj = 1 - RSS/TSS * (len(Y)-1)/(len(Y)-X.shape[1]-1)
+
+    NE = []
+    for i in range(0,len(Y),12):
+        T_Obs = Y_Obs[i:i+12]
+        T_Fit = Y_Fit[i:i+12]
+        Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
+        Denominator = np.sum([T**2 for T in T_Obs])
+        NE.append(np.sqrt(Numerator/Denominator))
+    NE = np.array(NE)
+
+
+    # Prepare data for plot
+    Line = np.linspace(min(Y.min(), (X*B).min()),
+                       max(Y.max(), (X*B).max()), len(Y))
+    # B_0 = np.sort(np.sqrt(np.diag(X * Cov * X.T)))
+    # CI_Line_u = np.exp(Line + t_Alpha[0] * B_0)
+    # CI_Line_o = np.exp(Line + t_Alpha[1] * B_0)
+
+    # Plots
+    DPI = 500
+    # SMax = max([Y_Obs.max(), Y_Fit.max()]) * 1.2
+    # SMin = min([Y_Obs.min(), Y_Fit.min()]) / 1.2
+    # SMax = 3.5*1E4
+    # SMin = 1.75*1E3
+    Colors=[(0,0,1),(0,1,0),(1,0,0)]
+    Lambda_ii = (X[:, 0] == 1) & (X[:, 1] == 1)
+    Lambda_ij = (X[:, 0] == 1) & (X[:, 1] == 0)
+    Mu_ij = (X[:, 0] == 0) & (X[:, 1] == 1)
+
+    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
+    # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
+    Axes.plot(Y_Obs[Lambda_ii], Y_Fit[Lambda_ii],
+              color=Colors[0], linestyle='none', marker='s')
+    Axes.plot(Y_Obs[Lambda_ij], Y_Fit[Lambda_ij],
+              color=Colors[1], linestyle='none', marker='o')
+    Axes.plot(Y_Obs[Mu_ij], Y_Fit[Mu_ij],
+              color=Colors[2], linestyle='none', marker='^')
+    Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
+    Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
+    Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
+    Axes.plot(np.exp(Line), np.exp(Line), color=(0, 0, 0), linestyle='--')
+    Axes.annotate(r'N ROIs   : ' + str(len(Y)//12), xy=(0.3, 0.1), xycoords='axes fraction')
+    Axes.annotate(r'N Points : ' + str(len(Y)), xy=(0.3, 0.025), xycoords='axes fraction')
+    Axes.annotate(r'$R^2_{ajd}$: ' + format(round(R2adj, 3),'.3f'), xy=(0.65, 0.1), xycoords='axes fraction')
+    Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
+    Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
+    Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
+    # Axes.set_xlim([SMin, SMax])
+    # Axes.set_ylim([SMin, SMax])
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.legend(loc='upper left')
+    plt.subplots_adjust(left=0.15, bottom=0.15)
+    if len(FName) > 0:
+        plt.savefig(FName)
+    plt.show()
+
+    return Parameters, R2adj, NE
+
 def FitModel(X, Y, Alpha=0.95, FName=''):
 
     # Solve linear system
@@ -408,51 +501,6 @@ def SimpleOLS(X,Y):
 
 def Main():
 
-    # Read trabecular ROIs data
-    TrabPath = Path(__file__).parents[1] / '06_PorosityEffect'
-    Data = pd.read_csv(TrabPath/'ROIsData.csv')
-
-    # Keep ROIs with CV < 0.263
-    F = Data['Variation Coefficient'] < 0.263
-    Files = []
-    for I, Row in Data[F].iterrows():
-        N = Row['ROI Number']
-        S = Row['Scan']
-        Files.append(f'{N}_{S}')
-
-    # Define paths to fabric and homogenisation data
-    FabPath = TrabPath / 'Fabric'
-    ElaPath = TrabPath / 'Elasticity'
-
-    # Read fabric data
-    TrabVal = np.zeros((len(Files),3))
-    TrabVec = np.zeros((len(Files),3,3))
-    TrabRho = np.zeros((len(Files)))
-    for i, F in enumerate(Files):
-        Fabric = Read.Fabric(FabPath / (F+'.fab'))
-        TrabVal[i] = Fabric[0]
-        TrabVec[i] = Fabric[1]
-        TrabRho[i] = Fabric[2]
-
-    # Read homogenisation results
-    TrabStiff = np.zeros((len(Files),6,6))
-    for i, F in enumerate(Files):
-
-        # Read stiffness matrix
-        ComplianceMatrix = Read.ComplianceDat(ElaPath / (F+'.dat'))
-        ComplianceMatrix = (ComplianceMatrix+ComplianceMatrix.T)/2
-        StiffnessMatrix = np.linalg.inv(ComplianceMatrix)
-        StiffnessMatrix = (StiffnessMatrix+StiffnessMatrix.T)/2
-
-        # Transform stiffness into fabric coordinate system
-        Mandel = Tensor.Engineering2MandelNotation(StiffnessMatrix)
-        S4 = Tensor.IsoMorphism66_3333(Mandel)
-        St = Tensor.TransformTensor(S4, np.eye(3), TrabVec[i])
-        StiffnessMatrix = Tensor.IsoMorphism3333_66(St)
-        Se = Tensor.Mandel2EngineeringNotation(StiffnessMatrix)
-        TrabStiff[i] = 1/2 * (Se+Se.T)
-
-    
     # Define paths to fabric and homogenisation data of cortical ROIs
     FabPath =Path(__file__).parents[1] / '05_Homogenization/Fabric'
     ElaPath =Path(__file__).parents[1] / '05_Homogenization/Elasticity'
@@ -516,6 +564,103 @@ def Main():
     CortVec = CortVec.reshape(-1,3,3)
     CortRho = CortRho.reshape(-1)
     CortStiff = CortStiff.reshape(-1,6,6)
+
+    # Define isotropic model
+    I = np.eye(3)
+    I4 = Tensor.Dyadic(I,I)
+    I4s = Tensor.Symmetric(I,I)
+    Lambda0 = 1E4
+    Mu0 = 6E3
+    S = Lambda0 * I4 + 2*Mu0*I4s
+    S66 = Tensor.IsoMorphism3333_66(S)
+
+    # Fit homogenization with original isotropic model
+    X = np.matrix(np.zeros((len(CortRho)*12, 2)))
+    Y = np.matrix(np.zeros((len(CortRho)*12, 1)))
+    BVTV = CortRho
+    m1 = CortVal[:,0]
+    m2 = CortVal[:,1]
+    m3 = CortVal[:,2]
+    S = CortStiff
+    for i, Si in enumerate(S):
+        
+        Start, Stop = 12*i, 12*(i+1)
+
+        # Build system
+        X[Start:Stop] = np.array([[1, 1],
+                                  [1, 0],
+                                  [1, 0],
+                                  [1, 0],
+                                  [1, 1],
+                                  [1, 0],
+                                  [1, 0],
+                                  [1, 0],
+                                  [1, 1],
+                                  [0, 1],
+                                  [0, 1],
+                                  [0, 1]])
+        
+        Y[Start:Stop] = np.log([[Si[0,0]],
+                                [Si[0,1]],
+                                [Si[0,2]],
+                                [Si[1,0]],
+                                [Si[1,1]],
+                                [Si[1,2]],
+                                [Si[2,0]],
+                                [Si[2,1]],
+                                [Si[2,2]],
+                                [Si[3,3]],
+                                [Si[4,4]],
+                                [Si[5,5]]])
+    
+    FName = Path(__file__).parent / 'RegressionIso.png'
+    Parameters, R2adj, NE = FitIsotropicModel(X, Y, FName=str(FName))
+
+
+    # Read trabecular ROIs data
+    TrabPath = Path(__file__).parents[1] / '06_PorosityEffect'
+    Data = pd.read_csv(TrabPath/'ROIsData.csv')
+
+    # Keep ROIs with CV < 0.263
+    F = Data['Variation Coefficient'] < 0.263
+    Files = []
+    for I, Row in Data[F].iterrows():
+        N = Row['ROI Number']
+        S = Row['Scan']
+        Files.append(f'{N}_{S}')
+
+    # Define paths to fabric and homogenisation data
+    FabPath = TrabPath / 'Fabric'
+    ElaPath = TrabPath / 'Elasticity'
+
+    # Read fabric data
+    TrabVal = np.zeros((len(Files),3))
+    TrabVec = np.zeros((len(Files),3,3))
+    TrabRho = np.zeros((len(Files)))
+    for i, F in enumerate(Files):
+        Fabric = Read.Fabric(FabPath / (F+'.fab'))
+        TrabVal[i] = Fabric[0]
+        TrabVec[i] = Fabric[1]
+        TrabRho[i] = Fabric[2]
+
+    # Read homogenisation results
+    TrabStiff = np.zeros((len(Files),6,6))
+    for i, F in enumerate(Files):
+
+        # Read stiffness matrix
+        ComplianceMatrix = Read.ComplianceDat(ElaPath / (F+'.dat'))
+        ComplianceMatrix = (ComplianceMatrix+ComplianceMatrix.T)/2
+        StiffnessMatrix = np.linalg.inv(ComplianceMatrix)
+        StiffnessMatrix = (StiffnessMatrix+StiffnessMatrix.T)/2
+
+        # Transform stiffness into fabric coordinate system
+        Mandel = Tensor.Engineering2MandelNotation(StiffnessMatrix)
+        S4 = Tensor.IsoMorphism66_3333(Mandel)
+        St = Tensor.TransformTensor(S4, np.eye(3), TrabVec[i])
+        StiffnessMatrix = Tensor.IsoMorphism3333_66(St)
+        Se = Tensor.Mandel2EngineeringNotation(StiffnessMatrix)
+        TrabStiff[i] = 1/2 * (Se+Se.T)
+
 
     # Investigate the effect of porosity on the stiffness tensor
     Figure, Axis = plt.subplots(1,3, dpi=192, sharex=True, figsize=(12,4))
@@ -691,49 +836,7 @@ def Main():
     plt.ylabel('Stiffness (MPa)')
     plt.show(Figure)
 
-    # Fit homogenization with original theorical model
-    BVTV = np.hstack((CortRho, TrabRho))
-    m1 = np.hstack((CortVal[:,0], TrabVal[:,0]))
-    m2 = np.hstack((CortVal[:,1], TrabVal[:,1]))
-    m3 = np.hstack((CortVal[:,2], TrabVal[:,2]))
-    S = np.vstack((CortStiff, TrabStiff))
-
-    X = np.matrix(np.zeros((len(BVTV)*12, 3)))
-    Y = np.matrix(np.zeros((len(BVTV)*12, 1)))
-    for i, Si in enumerate(S):
-        
-        Start, Stop = 12*i, 12*(i+1)
-
-        # Build system
-        X[Start:Stop] = np.array([[1, 2, 2*np.log(BVTV[i] + m1[i])],
-                                  [1, 0, np.log(BVTV[i] + m1[i]) + np.log(BVTV[i] + m2[i])],
-                                  [1, 0, np.log(BVTV[i] + m2[i]) + np.log(BVTV[i] + m3[i])],
-                                  [1, 0, np.log(BVTV[i] + m2[i]) + np.log(BVTV[i] + m1[i])],
-                                  [1, 2, 2*np.log(BVTV[i] + m2[i])],
-                                  [1, 0, np.log(BVTV[i] + m2[i]) + np.log(BVTV[i] + m3[i])],
-                                  [1, 0, np.log(BVTV[i] + m3[i]) + np.log(BVTV[i] + m1[i])],
-                                  [1, 0, np.log(BVTV[i] + m3[i]) + np.log(BVTV[i] + m2[i])],
-                                  [1, 2, 2*np.log(BVTV[i] + m3[i])],
-                                  [0, 2, np.log(BVTV[i] + m2[i]) + np.log(BVTV[i] + m3[i])],
-                                  [0, 2, np.log(BVTV[i] + m3[i]) + np.log(BVTV[i] + m1[i])],
-                                  [0, 2, np.log(BVTV[i] + m1[i]) + np.log(BVTV[i] + m2[i])]])
-        
-        Y[Start:Stop] = np.log([[Si[0,0]],
-                                [Si[0,1]],
-                                [Si[0,2]],
-                                [Si[1,0]],
-                                [Si[1,1]],
-                                [Si[1,2]],
-                                [Si[2,0]],
-                                [Si[2,1]],
-                                [Si[2,2]],
-                                [Si[3,3]],
-                                [Si[4,4]],
-                                [Si[5,5]]])
     
-    FName = Path(__file__).parent / 'Regression.png'
-    Parameters, R2adj, NE = FitModel(X, Y, FName=str(FName))
-
     # Fit homogenization with Zysset-Curnier theorical model
     BVTV = np.hstack((CortRho, TrabRho))
     m1 = np.hstack((CortVal[:,0], TrabVal[:,0]))
@@ -819,10 +922,14 @@ def Main():
 
     # Fit homogenization with alternative theorical model
     BVTV = np.hstack((CortRho, TrabRho))
+    m1 = np.hstack((CortVal[:,0], TrabVal[:,0]))
+    m2 = np.hstack((CortVal[:,1], TrabVal[:,1]))
+    m3 = np.hstack((CortVal[:,2], TrabVal[:,2]))
     S = np.vstack((CortStiff, TrabStiff))
 
     X = np.matrix(np.zeros((len(BVTV)*12, 5)))
     Y = np.matrix(np.zeros((len(BVTV)*12, 1)))
+    M = np.matrix(np.zeros((len(BVTV)*12, 1)))
     for i, Si in enumerate(S):
         
         Start, Stop = 12*i, 12*(i+1)
@@ -853,6 +960,19 @@ def Main():
                          [Si[3,3]],
                          [Si[4,4]],
                          [Si[5,5]]])
+        
+        M[Start:Stop] = np.log([[m1[i]],
+                                 [1],
+                                 [1],
+                                 [1],
+                                 [m2[i]],
+                                 [1],
+                                 [1],
+                                 [1],
+                                 [m3[i]],
+                                 [1],
+                                 [1],
+                                 [1]]) * (1-BVTV[i])
     
     FName = Path(__file__).parent / 'RegressionNew.png'
     Parameters, R2adj, NE = FitNewModel(X, Y, FName=str(FName))
@@ -862,33 +982,40 @@ def Main():
     k12 = Parameters.loc['Value', 'k12']
     k3 = Parameters.loc['Value', 'k3']
 
-    # Build model predicted values for cortical bone
-    MStiff = np.zeros((len(CortRho),6,6))
-    MStiff[:,0,0] = (L0+2*Mu0) * CortRho**k12
-    MStiff[:,2,2] = (L0+2*Mu0) * CortRho**k3
+    # Model parameters
+    BVTV = np.hstack((CortRho, TrabRho))
+    e1Val = np.hstack((CortVal[:,0], TrabVal[:,0]))
+    e2Val = np.hstack((CortVal[:,1], TrabVal[:,1]))
+    e3Val = np.hstack((CortVal[:,2], TrabVal[:,2]))
+    S = np.vstack((CortStiff, TrabStiff))
 
-    # Add tissue anisotropy
-    m1t, m2t, m3t = 0.841, 0.841, 1.318 # Virtual tissue fabric
-    m1f = np.hstack((CortVal[:,0], TrabVal[:,0]))
-    m2f = np.hstack((CortVal[:,1], TrabVal[:,1]))
-    m3f = np.hstack((CortVal[:,2], TrabVal[:,2]))
-    m1 = m1t*BVTV + m1f*(1-BVTV)
-    m2 = m2t*BVTV + m2f*(1-BVTV)
-    m3 = m3t*BVTV + m3f*(1-BVTV)
+    # Build model predicted values
+    MStiff = np.zeros((len(BVTV),6,6))
+    MStiff[:,0,0] = (L0+2*Mu0) * BVTV**k12
+    MStiff[:,2,2] = (L0+2*Mu0) * BVTV**k3
+
+    # Add architecture anisotropy
+    m1 = e1Val * (1-BVTV)
+    m2 = e2Val * (1-BVTV)
+    m3 = e3Val * (1-BVTV)
+    MArchStiff = np.zeros((len(BVTV),6,6))
+    MArchStiff[:,0,0] = (L0+2*Mu0) * BVTV**k12 * m1
+    MArchStiff[:,2,2] = (L0+2*Mu0) * BVTV**k3 * m3
 
     # Plot anisotropy vs BVTV
     Figure, Axis = plt.subplots(1,1, dpi=192)
-    Colors = [(1,0,0), (0,0,1), (1,0,1)]
-    Labels = ['Simulation $S_{33} / S_{11}$', 'Model $S_{33} / S_{11}$']
-    X = np.ones((len(CortRho),2), float)
-    X[:,1] = 1-CortRho
-    for i, V in enumerate([CortStiff, MStiff]):
+    Colors = [(1,0,0), (0,0,1), (0,0,0)]
+    Labels = ['Simulation $S_{33} / S_{11}$', 'Model $S_{33} / S_{11}$', 'Model+Fabric $S_{33} / S_{11}$']
+    X = np.ones((len(BVTV),2), float)
+    X[:,1] = 1-BVTV
+    for i, V in enumerate([S, MStiff, MArchStiff]):
             Y = np.array([v[2,2] / v[0,0] for v in V])
             B = SimpleOLS(np.matrix(X), np.matrix(Y).T)
-            xLine = 1-np.linspace(CortRho.min(), CortRho.max(), 10)
-            yLine = B[0,0] + B[1,0] * xLine
+            # xLine = 1-np.linspace(BVTV.min(), BVTV.max(), 10)
+            # yLine = B[0,0] + B[1,0] * xLine
             Axis.plot(X[:,1], Y, label=Labels[i], linestyle='none', marker='o', color=Colors[i])
-            Axis.plot(xLine, yLine, linestyle='--', color=Colors[i], linewidth=1)
+            # Axis.plot(xLine, yLine, linestyle='--', color=Colors[i], linewidth=1)
+            # Axis.annotate(f'y = {round(B[1,0],2)}x + {round(B[0,0],2)}',(0.05,2.3-0.1*i), color=Colors[i])
     Axis.set_xlabel(r'1-$\rho$ (-)')
     # Axis.set_ylim([0.95, 2.85])
     Axis.set_ylabel('Degree of Anisotropy (-)')
@@ -898,7 +1025,7 @@ def Main():
 
     # Read homogenisation results with tranvserse isotropic material
     Strain = np.array([0.001, 0.001, 0.001, 0.002, 0.002, 0.002])
-    TraStiff = np.zeros((len(Folders), 16, 6, 6))
+    CortStiffT = np.zeros((len(Folders), 16, 6, 6))
     for f, Folder in enumerate(Folders):
 
         # Iterate over each ROI
@@ -914,18 +1041,18 @@ def Main():
             # Compute stiffness
             for i in range(6):
                 for j in range(6):
-                    TraStiff[f,r,i,j] = Stress[i,j] / Strain[i]
+                    CortStiffT[f,r,i,j] = Stress[i,j] / Strain[i]
 
         # Transform stiffness into fabric coordinate system
-        StiffnessMatrix = 1/2 * (TraStiff[f,r] + TraStiff[f,r].T)
+        StiffnessMatrix = 1/2 * (CortStiffT[f,r] + CortStiffT[f,r].T)
         Mandel = Tensor.Engineering2MandelNotation(StiffnessMatrix)
         S4 = Tensor.IsoMorphism66_3333(Mandel)
         St = Tensor.TransformTensor(S4, np.eye(3), CortVec[f+16*r])
         StiffnessMatrix = Tensor.IsoMorphism3333_66(St)
         Se = Tensor.Mandel2EngineeringNotation(StiffnessMatrix)
-        TraStiff[f,r] = 1/2 * (Se+Se.T)
+        CortStiffT[f,r] = 1/2 * (Se+Se.T)
 
-    TraStiff = TraStiff.reshape(-1,6,6)
+    CortStiffT = CortStiffT.reshape(-1,6,6)
 
     # Add tissue anisotropy
     m1t, m2t, m3t = 0.841, 0.841, 1.318 # Virtual tissue fabric
@@ -935,6 +1062,9 @@ def Main():
     m1 = m1t*CortRho + m1f*(1-CortRho)
     m2 = m2t*CortRho + m2f*(1-CortRho)
     m3 = m3t*CortRho + m3f*(1-CortRho)
+    m1 = CortVal[:,0] ** ((1-CortRho)/2) * m1t ** CortRho
+    m2 = CortVal[:,1] ** ((1-CortRho)/2) * m2t ** CortRho
+    m3 = CortVal[:,2] ** ((1-CortRho)/2) * m3t ** CortRho
 
     # Build model predicted values for cortical bone
     MStiff = np.zeros((len(CortRho),6,6))
@@ -947,13 +1077,14 @@ def Main():
     Labels = ['Simulation $S_{33} / S_{11}$', 'Model $S_{33} / S_{11}$']
     X = np.ones((len(CortRho),2), float)
     X[:,1] = 1-CortRho
-    for i, V in enumerate([TraStiff, MStiff]):
+    for i, V in enumerate([CortStiffT, MStiff]):
             Y = np.array([v[2,2] / v[0,0] for v in V])
             B = SimpleOLS(np.matrix(X), np.matrix(Y).T)
             xLine = 1-np.linspace(CortRho.min(), CortRho.max(), 10)
             yLine = B[0,0] + B[1,0] * xLine
             Axis.plot(X[:,1], Y, label=Labels[i], linestyle='none', marker='o', color=Colors[i])
             Axis.plot(xLine, yLine, linestyle='--', color=Colors[i], linewidth=1)
+            Axis.annotate(f'y = {round(B[1,0],2)}x + {round(B[0,0],2)}',(0.05,2.3-0.1*i), color=Colors[i])
     Axis.set_xlabel(r'1-$\rho$ (-)')
     # Axis.set_ylim([0.95, 2.85])
     Axis.set_ylabel('Degree of Anisotropy (-)')
