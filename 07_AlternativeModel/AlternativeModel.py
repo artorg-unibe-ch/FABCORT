@@ -47,9 +47,9 @@ def FitIsotropicModel(X, Y, Alpha=0.95, FName=''):
 
     # Store parameters in data frame
     Parameters = pd.DataFrame(columns=['Lambda0','Mu0'])
-    Parameters.loc['Value'] = [B[0,0], B[1,0]]
-    Parameters.loc['95% CI Low'] = [B_CI_Low[0,0], B_CI_Low[0,1]]
-    Parameters.loc['95% CI Top'] = [B_CI_Top[0,0], B_CI_Top[0,1]]
+    Parameters.loc['Value'] = [B[1,0], B[2,0]]
+    Parameters.loc['95% CI Low'] = [B_CI_Low[0,1], B_CI_Low[0,2]]
+    Parameters.loc['95% CI Top'] = [B_CI_Top[0,1], B_CI_Top[0,2]]
 
     # Compute R2 and standard error of the estimate
     RSS = np.sum([R**2 for R in Residuals])
@@ -85,9 +85,9 @@ def FitIsotropicModel(X, Y, Alpha=0.95, FName=''):
     # SMax = 3.5*1E4
     # SMin = 1.75*1E3
     Colors=[(0,0,1),(0,1,0),(1,0,0)]
-    Lambda_ii = (X[:, 0] == 1) & (X[:, 1] == 2)
-    Lambda_ij = (X[:, 0] == 1) & (X[:, 1] == 0)
-    Mu_ij = (X[:, 0] == 0) & (X[:, 1] == 2)
+    Lambda_ii = np.tile([True,False,False,False,True,False,False,False,True,False,False,False], len(Y)//12)
+    Lambda_ij = np.tile([False,True,True,True,False,True,True,True,False,False,False,False], len(Y)//12)
+    Mu_ij = np.tile([False,False,False,False,False,False,False,False,False,True,True,True], len(Y)//12)
 
     Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
     # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
@@ -311,99 +311,6 @@ def FitNewModel(X, Y, Alpha=0.95, FName=''):
 
     return Parameters, R2adj, NE
 
-def FitModel(X, Y, Alpha=0.95, FName=''):
-
-    # Solve linear system
-    XTXi = np.linalg.inv(X.T * X)
-    B = XTXi * X.T * Y
-
-    # Compute residuals, variance, and covariance matrix
-    Y_Obs = np.exp(Y)
-    Y_Fit = np.exp(X * B)
-    Residuals = Y - X*B
-    DOFs = len(Y) - X.shape[1]
-    Sigma = Residuals.T * Residuals / DOFs
-    Cov = Sigma[0,0] * XTXi
-
-    # Compute B confidence interval
-    t_Alpha = t.interval(Alpha, DOFs)
-    B_CI_Low = B.T + t_Alpha[0] * np.sqrt(np.diag(Cov))
-    B_CI_Top = B.T + t_Alpha[1] * np.sqrt(np.diag(Cov))
-
-    # Store parameters in data frame
-    Parameters = pd.DataFrame(columns=['Lambda0','Mu0','k'])
-    Parameters.loc['Value'] = [np.exp(B[0,0]) - 2*np.exp(B[1,0]), np.exp(B[1,0]), B[2,0]]
-    Parameters.loc['95% CI Low'] = [np.exp(B_CI_Low[0,0]) - 2*np.exp(B_CI_Top[0,1]), np.exp(B_CI_Low[0,1]), B_CI_Low[0,2]]
-    Parameters.loc['95% CI Top'] = [np.exp(B_CI_Top[0,0]) - 2*np.exp(B_CI_Low[0,1]), np.exp(B_CI_Top[0,1]), B_CI_Top[0,2]]
-
-    # Compute R2 and standard error of the estimate
-    RSS = np.sum([R**2 for R in Residuals])
-    SE = np.sqrt(RSS / DOFs)
-    TSS = np.sum([R**2 for R in (Y - Y.mean())])
-    RegSS = TSS - RSS
-    R2 = RegSS / TSS
-
-    # Compute R2adj and NE
-    R2adj = 1 - RSS/TSS * (len(Y)-1)/(len(Y)-X.shape[1]-1)
-
-    NE = []
-    for i in range(0,len(Y),12):
-        T_Obs = Y_Obs[i:i+12]
-        T_Fit = Y_Fit[i:i+12]
-        Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
-        Denominator = np.sum([T**2 for T in T_Obs])
-        NE.append(np.sqrt(Numerator/Denominator))
-    NE = np.array(NE)
-
-
-    # Prepare data for plot
-    Line = np.linspace(min(Y.min(), (X*B).min()),
-                       max(Y.max(), (X*B).max()), len(Y))
-    # B_0 = np.sort(np.sqrt(np.diag(X * Cov * X.T)))
-    # CI_Line_u = np.exp(Line + t_Alpha[0] * B_0)
-    # CI_Line_o = np.exp(Line + t_Alpha[1] * B_0)
-
-    # Plots
-    DPI = 500
-    # SMax = max([Y_Obs.max(), Y_Fit.max()]) * 1.2
-    # SMin = min([Y_Obs.min(), Y_Fit.min()]) / 1.2
-    # SMax = 3.5*1E4
-    # SMin = 1.75*1E3
-    Colors=[(0,0,1),(0,1,0),(1,0,0)]
-    Lambda_ii = (X[:, 0] == 1) & (X[:, 1] == 2)
-    Lambda_ij = (X[:, 0] == 1) & (X[:, 1] == 0)
-    Mu_ij = (X[:, 0] == 0) & (X[:, 1] == 2)
-
-    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
-    # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
-    Axes.plot(Y_Obs[Lambda_ii], Y_Fit[Lambda_ii],
-              color=Colors[0], linestyle='none', marker='s')
-    Axes.plot(Y_Obs[Lambda_ij], Y_Fit[Lambda_ij],
-              color=Colors[1], linestyle='none', marker='o')
-    Axes.plot(Y_Obs[Mu_ij], Y_Fit[Mu_ij],
-              color=Colors[2], linestyle='none', marker='^')
-    Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
-    Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
-    Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
-    Axes.plot(np.exp(Line), np.exp(Line), color=(0, 0, 0), linestyle='--')
-    Axes.annotate(r'N ROIs   : ' + str(len(Y)//12), xy=(0.3, 0.1), xycoords='axes fraction')
-    Axes.annotate(r'N Points : ' + str(len(Y)), xy=(0.3, 0.025), xycoords='axes fraction')
-    Axes.annotate(r'$R^2_{ajd}$: ' + format(round(R2adj, 3),'.3f'), xy=(0.65, 0.1), xycoords='axes fraction')
-    Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
-    Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
-    Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
-    # Axes.set_xlim([SMin, SMax])
-    # Axes.set_ylim([SMin, SMax])
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.legend(loc='upper left')
-    plt.subplots_adjust(left=0.15, bottom=0.15)
-    if len(FName) > 0:
-        plt.savefig(FName)
-    plt.show()
-
-    return Parameters, R2adj, NE
-
 def FitZysset(X, Y, Alpha=0.95, FName=''):
 
     # Solve linear system
@@ -466,6 +373,100 @@ def FitZysset(X, Y, Alpha=0.95, FName=''):
     Lambda_ii = (X[:, 0] == 1)
     Lambda_ij = (X[:, 1] == 1)
     Mu_ij = (X[:, 2] == 1)
+
+    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
+    # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
+    Axes.plot(Y_Obs[Lambda_ii], Y_Fit[Lambda_ii],
+              color=Colors[0], linestyle='none', marker='s')
+    Axes.plot(Y_Obs[Lambda_ij], Y_Fit[Lambda_ij],
+              color=Colors[1], linestyle='none', marker='o')
+    Axes.plot(Y_Obs[Mu_ij], Y_Fit[Mu_ij],
+              color=Colors[2], linestyle='none', marker='^')
+    Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
+    Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
+    Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
+    Axes.plot(np.exp(Line), np.exp(Line), color=(0, 0, 0), linestyle='--')
+    Axes.annotate(r'N ROIs   : ' + str(len(Y)//12), xy=(0.3, 0.1), xycoords='axes fraction')
+    Axes.annotate(r'N Points : ' + str(len(Y)), xy=(0.3, 0.025), xycoords='axes fraction')
+    Axes.annotate(r'$R^2_{ajd}$: ' + format(round(R2adj, 3),'.3f'), xy=(0.65, 0.1), xycoords='axes fraction')
+    Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
+    Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
+    Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
+    # Axes.set_xlim([SMin, SMax])
+    # Axes.set_ylim([SMin, SMax])
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.legend(loc='upper left')
+    plt.subplots_adjust(left=0.15, bottom=0.15)
+    if len(FName) > 0:
+        plt.savefig(FName)
+    plt.show()
+
+    return Parameters, R2adj, NE
+
+def FitkModel(X, Y, Alpha=0.95, FName=''):
+
+    # Solve linear system
+    XTXi = np.linalg.inv(X.T * X)
+    B = XTXi * X.T * Y
+
+    # Compute residuals, variance, and covariance matrix
+    Y_Obs = np.exp(Y)
+    Y_Fit = np.exp(X * B)
+    Residuals = Y - X*B
+    DOFs = len(Y) - X.shape[1]
+    Sigma = Residuals.T * Residuals / DOFs
+    Cov = Sigma[0,0] * XTXi
+
+    # Compute B confidence interval
+    t_Alpha = t.interval(Alpha, DOFs)
+    B_CI_Low = B.T + t_Alpha[0] * np.sqrt(np.diag(Cov))
+    B_CI_Top = B.T + t_Alpha[1] * np.sqrt(np.diag(Cov))
+
+    # Store parameters in data frame
+    Parameters = pd.DataFrame(columns=['Lambda0', 'Lambda0p','Mu0','k12', 'k3'])
+    Parameters.loc['Value'] = [np.exp(B[0,0]) - 2*np.exp(B[2,0]), np.exp(B[1,0]), np.exp(B[2,0]), B[3,0], B[4,0]]
+    Parameters.loc['95% CI Low'] = [np.exp(B_CI_Low[0,0]) - 2*np.exp(B_CI_Top[0,2]), np.exp(B_CI_Low[0,1]), np.exp(B_CI_Low[0,2]), B_CI_Low[0,3], B_CI_Low[0,4]]
+    Parameters.loc['95% CI Top'] = [np.exp(B_CI_Top[0,0]) - 2*np.exp(B_CI_Low[0,2]), np.exp(B_CI_Top[0,1]), np.exp(B_CI_Top[0,2]), B_CI_Top[0,3], B_CI_Top[0,4]]
+
+    # Compute R2 and standard error of the estimate
+    RSS = np.sum([R**2 for R in Residuals])
+    SE = np.sqrt(RSS / DOFs)
+    TSS = np.sum([R**2 for R in (Y - Y.mean())])
+    RegSS = TSS - RSS
+    R2 = RegSS / TSS
+
+    # Compute R2adj and NE
+    R2adj = 1 - RSS/TSS * (len(Y)-1)/(len(Y)-X.shape[1]-1)
+
+    NE = []
+    for i in range(0,len(Y),12):
+        T_Obs = Y_Obs[i:i+12]
+        T_Fit = Y_Fit[i:i+12]
+        Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
+        Denominator = np.sum([T**2 for T in T_Obs])
+        NE.append(np.sqrt(Numerator/Denominator))
+    NE = np.array(NE)
+
+
+    # Prepare data for plot
+    Line = np.linspace(min(Y.min(), (X*B).min()),
+                       max(Y.max(), (X*B).max()), len(Y))
+    # B_0 = np.sort(np.sqrt(np.diag(X * Cov * X.T)))
+    # CI_Line_u = np.exp(Line + t_Alpha[0] * B_0)
+    # CI_Line_o = np.exp(Line + t_Alpha[1] * B_0)
+
+    # Plots
+    DPI = 500
+    # SMax = max([Y_Obs.max(), Y_Fit.max()]) * 1.2
+    # SMin = min([Y_Obs.min(), Y_Fit.min()]) / 1.2
+    # SMax = 3.5*1E4
+    # SMin = 1.75*1E3
+    Colors=[(0,0,1),(0,1,0),(1,0,0)]
+    Lambda_ii = np.tile([True,False,False,False,True,False,False,False,True,False,False,False], len(Y)//12)
+    Lambda_ij = np.tile([False,True,True,True,False,True,True,True,False,False,False,False], len(Y)//12)
+    Mu_ij = np.tile([False,False,False,False,False,False,False,False,False,True,True,True], len(Y)//12)
+
 
     Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
     # Axes.fill_between(np.exp(Line), CI_Line_u, CI_Line_o, color=(0.8,0.8,0.8))
@@ -674,7 +675,7 @@ def Main():
     S66 = Tensor.IsoMorphism3333_66(S)
 
     # Fit homogenization with simple isotropic model
-    X = np.matrix(np.zeros((len(CortRho)*12, 2)))
+    X = np.matrix(np.zeros((len(CortRho)*12, 3)))
     Y = np.matrix(np.zeros((len(CortRho)*12, 1)))
     S = CortStiff
     for i, Si in enumerate(S):
@@ -682,18 +683,18 @@ def Main():
         Start, Stop = 12*i, 12*(i+1)
 
         # Build system
-        X[Start:Stop] = np.array([[1, 2],
-                                  [1, 0],
-                                  [1, 0],
-                                  [1, 0],
-                                  [1, 2],
-                                  [1, 0],
-                                  [1, 0],
-                                  [1, 0],
-                                  [1, 2],
-                                  [0, 2],
-                                  [0, 2],
-                                  [0, 2]])
+        X[Start:Stop] = np.array([[1, 0, 0],
+                                  [0, 1, 0],
+                                  [0, 1, 0],
+                                  [0, 1, 0],
+                                  [1, 0, 0,],
+                                  [0, 1, 0],
+                                  [0, 1, 0],
+                                  [0, 1, 0],
+                                  [1, 0, 0],
+                                  [0, 0, 1],
+                                  [0, 0, 1],
+                                  [0, 0, 1]])
         
         Y[Start:Stop] = np.array([[Si[0,0]],
                                   [Si[0,1]],
@@ -764,8 +765,8 @@ def Main():
     FName = Path(__file__).parent / 'RegressionRho.png'
     ParametersRho, R2adj, NE = FitRhoModel(X, Y, Parameters, FName=str(FName))
 
-    # Define fabric-based model scaled with rho
-    m1, m2, m3 = np.eye(3) #CortVec[0]
+    # Define fabric-based model scaled with rho and k according to direction
+    m1, m2, m3 = CortVec[0]
     M1, M2, M3 = np.outer(m1,m1), np.outer(m2,m2), np.outer(m3,m3)
     M = [M1, M2, M3]
     m1, m2, m3 = CortVal[0]
@@ -782,7 +783,8 @@ def Main():
         S += Lambda0 * Rho**((k[i]+k[i-1])/2) * m[i]**l * m[i-1]**l * Tensor.Dyadic(M[i-1],M[i])
         S +=   2*Mu0 * Rho**((k[i]+k[i])/2)   * m[i]**l * m[i]**l   * Tensor.Symmetric(M[i],M[i])
         S +=   2*Mu0 * Rho**((k[i]+k[i-1])/2) * m[i]**l * m[i-1]**l * Tensor.Symmetric(M[i-1],M[i])
-    S66 = Tensor.IsoMorphism3333_66(S)
+    St = Tensor.TransformTensor(S, np.eye(3), CortVec[0])
+    S66 = Tensor.IsoMorphism3333_66(St)
     print(S66)
 
     L = np.array([[m[0]**(2*l) * Rho**k[0] * (Lambda0 + 2*Mu0), m[0]**l * m[1]**l * Rho**((k[0]+k[1])/2) * Lambda0, m[0]**l * m[2]**l * Rho**((k[0]+k[2])/2) * Lambda0, 0, 0, 0],
@@ -905,6 +907,54 @@ def Main():
     
     FName = Path(__file__).parent / 'RegressionZysset.png'
     Parameters, R2adj, NE = FitZysset(X, Y, FName=str(FName))
+
+    # Fit homogenization with alternative theorical model
+    Rho = CortRho
+    m1 = CortVal[:,0]
+    m2 = CortVal[:,1]
+    m3 = CortVal[:,2]
+    S = CortStiff
+
+    X = np.matrix(np.zeros((len(Rho)*12, 5)))
+    Y = np.matrix(np.zeros((len(Rho)*12, 1)))
+    for i, Si in enumerate(S):
+        
+        Start, Stop = 12*i, 12*(i+1)
+
+        # Build system
+        X[Start:Stop] = np.array([[1, 0, 0, np.log(Rho[i]), 0],
+                                  [0, 1, 0, np.log(Rho[i]), 0],
+                                  [0, 1, 0, np.log(Rho[i]), 0],
+                                  [0, 1, 0, np.log(Rho[i]), 0],
+                                  [1, 0, 0, np.log(Rho[i]), 0],
+                                  [0, 1, 0, np.log(Rho[i]), 0],
+                                  [0, 1, 0, np.log(Rho[i]), 0],
+                                  [0, 1, 0, np.log(Rho[i]), 0],
+                                  [1, 0, 0, 0, np.log(Rho[i])],
+                                  [0, 0, 1, 0, np.log(Rho[i])],
+                                  [0, 0, 1, np.log(Rho[i]), 0],
+                                  [0, 0, 1, np.log(Rho[i]), 0]])
+        
+        Y[Start:Stop] = np.log([[Si[0,0]],
+                         [Si[0,1]],
+                         [Si[0,2]],
+                         [Si[1,0]],
+                         [Si[1,1]],
+                         [Si[1,2]],
+                         [Si[2,0]],
+                         [Si[2,1]],
+                         [Si[2,2]],
+                         [Si[3,3]],
+                         [Si[4,4]],
+                         [Si[5,5]]])
+    
+    FName = Path(__file__).parent / 'RegressionNew.png'
+    Parameters, R2adj, NE = FitkModel(X, Y, FName=str(FName))
+    L0 = Parameters.loc['Value', 'Lambda0']
+    L0p = Parameters.loc['Value', 'Lambda0p']
+    Mu0 = Parameters.loc['Value', 'Mu0']
+    k12 = Parameters.loc['Value', 'k12']
+    k3 = Parameters.loc['Value', 'k3']
 
 
 
