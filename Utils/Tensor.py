@@ -46,6 +46,30 @@ class Tensor():
 
         return C
 
+    def Tensor(self, A, B):
+
+        C = np.zeros((3, 3, 3, 3))
+
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    for l in range(3):
+                        C[i,j,k,l] = A[i,l]*B[j,k]
+
+        return C
+    
+    def Transposed(self, A, B):
+
+        C = np.zeros((3, 3, 3, 3))
+
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    for l in range(3):
+                        C[i,j,k,l] = A[i,k]*B[j,l]
+                        
+        return C
+
     def Symmetric(self, A, B):
 
         C = np.zeros((3, 3, 3, 3))
@@ -508,7 +532,7 @@ class Tensor():
 
     def Orthotropic(self, E1, E2, E3, Mu23, Mu31, Mu12, Nu23, Nu31, Nu12, Basis=np.eye(3)):
         
-        """Build the full 3x3x3x3 transverse isotropic elasticity tensor."""
+        """Build the full 3x3x3x3 orthotropic elasticity tensor."""
 
         # Lamé parameters
         Lambda1 = E1 * Nu23 / ((1 + Nu23) * (1 - 2 * Nu23))
