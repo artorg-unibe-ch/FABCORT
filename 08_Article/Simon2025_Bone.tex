@@ -181,6 +181,41 @@
 	
 	\newpage
 	\section{Material and Methods}
+
+	\subsection{Bone Experimental Properties}
+	Lamellar bone
+	\begin{itemize}
+		\item Nanoindentation data
+		\item Virtual fabric
+	\end{itemize}
+
+	Cortical bone
+	\begin{itemize}
+		\item Samples
+		\item Micro-CT
+		\item RUS data
+	\end{itemize}
+
+	In the present study:
+	\begin{itemize}
+		\item Downsampling factor 2
+		\item 16x 1mm\textsuperscript{3} Relationships
+		\item Isotropic vs transverse isotropic material
+		\item Average $\mathbb{S}$ per sample
+	\end{itemize}
+
+	\begin{figure}[!h]
+		\centering
+		\begin{subfigure}[t]{.45\linewidth}
+			\includegraphics[height=0.8\linewidth]{Scan}
+			\caption{Typical sample with its porosities}
+		\end{subfigure}
+		\begin{subfigure}[t]{0.45\linewidth}
+			\includegraphics[height=0.8\linewidth, trim=50 50 50 0]{ROIs}
+			\caption{ROIs analysed}
+		\end{subfigure}
+	\end{figure}
+
 	\subsection{Theorical Model}
 	\begin{itemize}
 		\item Density-elasticity relationships
@@ -196,7 +231,7 @@
 		\mathbf{M} = \sum_{i=1}^{3} m_i^l \mathbf{m}_i \otimes \mathbf{m}_i
 	\end{equation}
 
-	New Model
+	Proposed Model
 	\begin{equation}
 		\mathbb{S} = \lambda_0 \mathbf{M} \otimes \mathbf{M} + \mu_0 \mathbf{M} \underline{\overline{\otimes}} \mathbf{M}
 	\end{equation}
@@ -204,27 +239,6 @@
 	\begin{equation}
 		\mathbf{M} = \sum_{i=1}^{3} \rho^{k_i} m_i^l \mathbf{m}_i \otimes \mathbf{m}_i
 	\end{equation}
-
-	\subsection{Bone Experimental Properties}
-	Lamellar bone
-	\begin{itemize}
-		\item Nanoindentation data
-		\item Virtual fabric
-	\end{itemize}
-
-	Cortical bone
-	\begin{itemize}
-		\item Samples
-		\item Micro-CT
-		\item RUS data
-	\end{itemize}
-	In the present study:
-	\begin{itemize}
-		\item Downsampling factor 2
-		\item 16x 1mm\textsuperscript{3} Relationships
-		\item Isotropic vs transverse isotropic material
-		\item Average $\mathbb{S}$ per sample
-	\end{itemize}
 	
 	%
 	%
@@ -289,17 +303,38 @@
 		\begin{tabular}{l|c|c|c|c|c|c|c}
 			Model & Matrix & $\lambda_0$ & $\mu_0$ & k1 & k2 & k3 & l \\
 			\hline
-			Old & Isotropic & 6406 & 2912 & 2.28 & 2.28 & 2.28 & 0.14 \\
-			Old & Transverse & 14165 & 4879 & 2.47 & 2.47 & 2.47 & 0.66 \\
-			New & Isotropic & 6414 & 2916 & 2.78 & 2.65 & 1.61 & 0.00 \\
-			New & Transverse & 14468 & 4977 & 2.92 & 3.48 & 1.82 & 0.48 \\
+			Standard & Isotropic & 6406 & 2912 & 2.28 & 2.28 & 2.28 & 0.14 \\
+			Standard & Transverse & 14165 & 4879 & 2.47 & 2.47 & 2.47 & 0.66 \\
+			Proposed & Isotropic & 6414 & 2916 & 2.78 & 2.65 & 1.61 & 0.00 \\
+			Proposed & Transverse & 14468 & 4977 & 2.92 & 3.48 & 1.82 & 0.48 \\
 			\hline
 		\end{tabular}
 	\end{table*}
 
 	\clearpage
-	\subsection{Comparison to RUS}
 	\begin{figure*}
+		\centering
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{Anisotropy_SIsotropic}
+			\caption{Isotropic matrix}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{Anisotropy_STransverse}
+			\caption{Transverse isotropic matrix}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{Anisotropy_EIsotropic}
+			\caption{Isotropic matrix}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{Anisotropy_ETransverse}
+			\caption{Transverse isotropic matrix}
+		\end{subfigure}
+		\caption{Anisotropy ratio }
+	\end{figure*}
+
+	\subsection{Comparison to RUS}
+	\begin{figure*}[!h]
 		\begin{subfigure}[b]{0.45\linewidth}
 			\includegraphics[width=\linewidth]{Elasticity_IsoRUS}
 		\end{subfigure}
@@ -308,7 +343,7 @@
 		\end{subfigure}
 	\end{figure*}
 
-	\begin{figure*}
+	\begin{figure*}[!h]
 		\begin{subfigure}[b]{0.45\linewidth}
 			\includegraphics[width=\linewidth]{AnisotropyBVTV_S}
 		\end{subfigure}
@@ -325,6 +360,7 @@
 	%
 	%
 	
+	\clearpage
 	\section{Discussion and Conclusion}
 	
 	%

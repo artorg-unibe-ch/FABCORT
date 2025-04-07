@@ -498,6 +498,27 @@ class Tensor():
         else:
             print('Matrices sizes mismatch')
 
+    def OrthoProj(self, A):
+        """
+        Project tensor A onto orthotropy
+        """
+
+        if A.size == 81:
+            ReturnTensor = True
+            A = self.IsoMorphism3333_66(A)
+        else:
+            ReturnTensor = False
+
+        for i in range(6):
+            for j in range(6):
+                if i>2 or j>2:
+                    if i!=j:
+                        A[i,j] = 0
+
+        if ReturnTensor:
+            A = self.IsoMorphism66_3333(A)
+
+        return A
 
 #%% Tensors building
     def Fabric(self, eValues, eVectors):

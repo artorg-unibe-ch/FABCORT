@@ -1025,7 +1025,7 @@ def FitRhoModel(X, Y, Alpha=0.95, FName=''):
 
     return Parameters, R2adj, NE
 
-def SimpleOLS(X,Y):
+def OLS(X,Y):
     XTXi = np.linalg.inv(X.T * X)
     B = XTXi * X.T * Y
     return B
@@ -1167,7 +1167,7 @@ def Main():
         # Iterate over each ROI
         for r, ROI in enumerate(ROIs):
 
-            # Get homogenization stress results
+            # Get homogenization stress results for isotropic matrix
             File = open(ElaPath / Folder / (ROI + f'_Isotropic.out'), 'r').readlines()
             Stress = np.zeros((6,6))
             for i in range(6):
@@ -1175,11 +1175,18 @@ def Main():
                     Stress[i,j] = float(File[i+4].split()[j+1])
 
             # Compute stiffness
+            Stiffness = np.zeros((6,6))
             for i in range(6):
                 for j in range(6):
-                    CortStiff[f,r,i,j] = Stress[i,j] / Strain[i]
+                    Stiffness[i,j] = Stress[i,j] / Strain[i]
 
-            # Get homogenization stress results
+            # Symmetrize matrix
+            Stiffness = 1/2 * (Stiffness + Stiffness.T)
+
+            # Project onto orthotropy and store
+            CortStiff[f,r] = Tensor.OrthoProj(Stiffness)
+
+            # Get homogenization stress results for transverse isotropic matrix
             File = open(ElaPath / Folder / (ROI + f'_Transverse.out'), 'r').readlines()
             Stress = np.zeros((6,6))
             for i in range(6):
@@ -1187,14 +1194,16 @@ def Main():
                     Stress[i,j] = float(File[i+4].split()[j+1])
 
             # Compute stiffness
+            Stiffness = np.zeros((6,6))
             for i in range(6):
                 for j in range(6):
-                    CortTraStiff[f,r,i,j] = Stress[i,j] / Strain[i]
+                    Stiffness[i,j] = Stress[i,j] / Strain[i]
 
-        # Symmetrize matrices
-        CortStiff[f,r] = 1/2 * (CortStiff[f,r] + CortStiff[f,r].T)
-        CortTraStiff[f,r] = 1/2 * (CortTraStiff[f,r] + CortTraStiff[f,r].T)
+            # Symmetrize matrix
+            Stiffness = 1/2 * (Stiffness + Stiffness.T)
 
+            # Project onto orthotropy and store
+            CortTraStiff[f,r] = Tensor.OrthoProj(Stiffness)
 
     # Reduce dimensionality of cortical data
     CortVal = CortVal.reshape(-1,3)
@@ -1203,12 +1212,14 @@ def Main():
     CortStiff = CortStiff.reshape(-1,6,6)
     CortTraStiff = CortTraStiff.reshape(-1,6,6)
 
-    # Project onto orthotropy
-    for i in range(6):
-        for j in range(6):
-            if i>2 or j>2:
-                if i!=j:
-                    CortStiff[:,i,j] = 0
+    # Compute corresponding compliance 
+    CortComp = np.zeros(CortStiff.shape)
+    CortTraComp = np.zeros(CortTraStiff.shape)
+    for i, (S, St) in enumerate(zip(CortStiff, CortTraStiff)):
+        CortComp[i] = np.linalg.inv(S)
+        CortTraComp[i] = np.linalg.inv(St)
+
+
 
     # Fit homogenization with simple isotropic model (2 constants)
     S = CortStiff
@@ -1222,75 +1233,125 @@ def Main():
     ParametersRho, R2adjRho, NERho = FitIsoRho(S, Rho, FName)
 
     # Define fabric-based model scaled with rho^k and m^l 
-    S = CortTraStiff
+    S = CortStiff
     Rho = CortRho
     eValues = CortVal
     eVectors = CortVec
-    FName = str(Path(__file__).parent / 'RegressionFabric_Transverse.png')
-    ParametersFabric, R2adjFabric, NEFabric = FitFabric(S, Rho, eValues, eVectors, FName)
+    FName = str(Path(__file__).parent / 'RegressionFabric_Isotropic.png')
+    ParametersFabric, R2adjFabric, NEFabric = FitFabric(S, Rho, eValues, eVectors)
 
     # Define fabric-based model scaled with rho and k according to direction
-    S = CortTraStiff
+    S = CortStiff
     Rho = CortRho
     eValues = CortVal
     eVectors = CortVec
-    FName = str(Path(__file__).parent / 'RegressionFabricK_Transverse.png')
-    ParametersFabricK, R2adjFabricK, NEFabricK = FitFabricK(S, Rho, eValues, eVectors, FName)
+    FName = str(Path(__file__).parent / 'RegressionFabricK_Isotropic.png')
+    ParametersFabricK, R2adjFabricK, NEFabricK = FitFabricK(S, Rho, eValues, eVectors)
 
-    # Analyze anisotropy
-    Lambda0 = ParametersRho[0]
-    Mu0 = ParametersRho[1]
-    k = ParametersRho[2]
-    Stiffness = np.zeros((len(CortRho), 6, 6))
-    for i, Rho in enumerate(CortRho):
-        for R in Rho:
-            T = IsoRhoTensor(Lambda0, Mu0, k, R)
-            Stiffness[i] += Tensor.IsoMorphism3333_66(T)
-    
-    Stiffness = Stiffness / 16
-    Porosity = 1 - np.mean(CortRho, axis=1)
-
-    Figure, Axis = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=200)
-    Axis.plot(Porosity, Stiffness[:,2,2]/Stiffness[:,0,0], marker='o', color=(0,0,1),
-              linestyle='none',fillstyle='none', label=r'$S_{33}/S_{11}$')
-    plt.show(Figure)
-
-
+    # Build stiffness and compliance tensors
     Lambda0 = ParametersFabric[0]
     Mu0 = ParametersFabric[1]
     k = ParametersFabric[2]
     l = ParametersFabric[3]
-    Stiffness = np.zeros((len(CortRho), 6, 6))
-    for i, (Rho, Val, Vec) in enumerate(zip(CortRho, CortVal, CortVec)):
-        for R, Va, Ve in zip(Rho, Val, Vec):
-            T = FabricTensor(Lambda0, Mu0, k, l, R, Va, Ve)
-            Stiffness[i] += Tensor.IsoMorphism3333_66(T)
+    FabStiffness = np.zeros((len(CortRho), 6, 6))
+    FabCompliance = np.zeros((len(CortRho), 6, 6))
+    for i, (Rho, Values, Vectors) in enumerate(zip(CortRho, CortVal, CortVec)):
+        T = FabricTensor(Lambda0, Mu0, k, l, Rho, Values, Vectors)
+        T = Tensor.IsoMorphism3333_66(T)
+        T = Tensor.OrthoProj(T)
+        FabStiffness[i] = T
+        FabCompliance[i] = np.linalg.inv(T)
     
-    Stiffness = Stiffness / 16
 
     Lambda0 = ParametersFabricK[0]
     Mu0 = ParametersFabricK[1]
     k1, k2, k3 = ParametersFabricK[2:5]
     l = ParametersFabricK[5]
+    FabKStiffness = np.zeros((len(CortRho), 6, 6))
+    FabKCompliance = np.zeros((len(CortRho), 6, 6))
+    for i, (Rho, Values, Vectors) in enumerate(zip(CortRho, CortVal, CortVec)):
+        T = FabricKTensor(Lambda0, Mu0, k1, k2, k3, l, Rho, Values, Vectors)
+        T = Tensor.IsoMorphism3333_66(T)
+        T = Tensor.OrthoProj(T)
+        FabKStiffness[i] = T
+        FabKCompliance[i] = np.linalg.inv(T)
 
-    TraStiffness = np.zeros((len(CortRho), 6, 6))
-    for i, (Rho, Val, Vec) in enumerate(zip(CortRho, CortVal, CortVec)):
-        for R, Va, Ve in zip(Rho, Val, Vec):
-            T = FabricKTensor(Lambda0, Mu0, k1, k2, k3, l, R, Va, Ve)
-            TraStiffness[i] += Tensor.IsoMorphism3333_66(T)
-    
-    TraStiffness = TraStiffness / 16
-    Porosity = 1 - np.mean(CortRho, axis=1)
+    # Analyze anisotropy
+    S = CortStiff
+    X = np.concatenate([[np.ones(len(S))],[1-CortRho]], axis=0).T
+    FName = str(Path(__file__).parent / 'Anisotropy_SIsotropic.png')
+    Colors = [(0,0,1),(1,0,0),(0,0,0)]
+    Labels = [r'Standard Model $S_{33}/S_{11}$', r'Proposed Model $S_{33}/S_{11}$',r'Simulation $S_{33}/S_{11}$']
 
     Figure, Axis = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=200)
-    Axis.plot(Porosity, Stiffness[:,2,2]/Stiffness[:,0,0], marker='o', color=(0,0,1),
-              linestyle='none',fillstyle='none', label=r'$S_{33}/S_{11}$')
-    Axis.plot(Porosity, TraStiffness[:,2,2]/TraStiffness[:,0,0], marker='o', color=(1,0,0),
-              linestyle='none',fillstyle='none', label=r'$S_{33}/S_{11}$')
+    # Y = np.array([m[2] / m[0] for m in CortVal])
+    # B = OLS(np.matrix(X), np.matrix(Y).T)
+    # xLine = 1-np.linspace(CortRho.max(), CortRho.min(), 10)
+    # yLine = B[0,0] + B[1,0] * xLine
+    # Axis.plot(X[:,1], Y, label=r'Fabric $m_{3}/m_{1}$', linestyle='none',
+    #             marker='o', color=(0.5,0.5,0.5), fillstyle='none')
+    # Axis.plot(xLine, yLine, linestyle='--', color=(0.5,0.5,0.5), linewidth=1)
+    # Axis.annotate(f'y = {round(B[0,0],2)} + {round(B[1,0],2)}x',
+    #                 (0.05,0.65), color=(0.5,0.5,0.5), xycoords='axes fraction')
+    # Axis.plot(1-CortRho, [v[2] / v[0] for v in CortVal], linestyle='none',
+    #           marker='o', color=(0.5,0.5,0.5), fillstyle='none')
+    for i, Stiffness in enumerate([FabStiffness, FabKStiffness, S]):
+            Y = np.array([s[2,2] / s[0,0] for s in Stiffness])
+            B = OLS(np.matrix(X), np.matrix(Y).T)
+            xLine = 1-np.linspace(CortRho.max(), CortRho.min(), 10)
+            yLine = B[0,0] + B[1,0] * xLine
+            Axis.plot(X[:,1], Y, label=Labels[i], linestyle='none',
+                      marker='o', color=Colors[i], fillstyle='none')
+            Axis.plot(xLine, yLine, linestyle='--', color=Colors[i], linewidth=1)
+            Axis.annotate(f'y = {round(B[0,0],2)} + {round(B[1,0],2)}x',
+                          (0.05,0.65-0.075*(i+1)), color=Colors[i], xycoords='axes fraction')
+    Axis.set_xlabel(r'1 - $\rho$ (-)')
+    Axis.set_ylabel('Anisotropy (-)')
+    Axis.legend(loc='upper left')
+    plt.savefig(fname=FName)
+    plt.show(Figure)
+
+    # Plot compliance anisotropy
+    E = CortComp
+    X = np.concatenate([[np.ones(len(E))],[1-CortRho]], axis=0).T
+    FName = str(Path(__file__).parent / 'Anisotropy_EIsotropic.png')
+    Colors = [(0,0,1),(1,0,0),(0,0,0)]
+    Labels = [r'Standard Model $E_{33}/E_{11}$', r'Proposed Model $E_{33}/E_{11}$',r'Simulation $E_{33}/E_{11}$']
+
+    Figure, Axis = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=200)
+    # Y = np.array([m[2] / m[0] for m in CortVal])
+    # B = OLS(np.matrix(X), np.matrix(Y).T)
+    # xLine = 1-np.linspace(CortRho.max(), CortRho.min(), 10)
+    # yLine = B[0,0] + B[1,0] * xLine
+    # Axis.plot(X[:,1], Y, label=r'Fabric $m_{3}/m_{1}$', linestyle='none',
+    #             marker='o', color=(0.5,0.5,0.5), fillstyle='none')
+    # Axis.plot(xLine, yLine, linestyle='--', color=(0.5,0.5,0.5), linewidth=1)
+    # Axis.annotate(f'y = {round(B[0,0],2)} + {round(B[1,0],2)}x',
+    #                 (0.05,0.65), color=(0.5,0.5,0.5), xycoords='axes fraction')
+    # Axis.plot(1-CortRho, [v[2] / v[0] for v in CortVal], linestyle='none',
+    #           marker='o', color=(0.5,0.5,0.5), fillstyle='none')
+    for i, Compliance in enumerate([FabCompliance, FabKCompliance, E]):
+            Y = np.array([c[0,0] / c[2,2] for c in Compliance])
+            B = OLS(np.matrix(X), np.matrix(Y).T)
+            xLine = 1-np.linspace(CortRho.max(), CortRho.min(), 10)
+            yLine = B[0,0] + B[1,0] * xLine
+            Axis.plot(X[:,1], Y, label=Labels[i], linestyle='none',
+                      marker='o', color=Colors[i], fillstyle='none')
+            Axis.plot(xLine, yLine, linestyle='--', color=Colors[i], linewidth=1)
+            Axis.annotate(f'y = {round(B[0,0],2)} + {round(B[1,0],2)}x',
+                          (0.05,0.80-0.07*(i+1)), color=Colors[i], xycoords='axes fraction')
+    Axis.set_xlabel(r'1 - $\rho$ (-)')
+    Axis.set_ylabel('Anisotropy (-)')
+    Axis.legend(loc='upper left')
+    plt.savefig(fname=FName)
     plt.show(Figure)
 
 
+
+
     
+
+
 
 
 
@@ -1945,7 +2006,7 @@ def Main():
     X[:,1] = 1-BVTV
     for i, V in enumerate([S, MStiff, MArchStiff]):
             Y = np.array([v[2,2] / v[0,0] for v in V])
-            B = SimpleOLS(np.matrix(X), np.matrix(Y).T)
+            B = OLS(np.matrix(X), np.matrix(Y).T)
             # xLine = 1-np.linspace(BVTV.min(), BVTV.max(), 10)
             # yLine = B[0,0] + B[1,0] * xLine
             Axis.plot(X[:,1], Y, label=Labels[i], linestyle='none', marker='o', color=Colors[i])
@@ -2014,7 +2075,7 @@ def Main():
     X[:,1] = 1-CortRho
     for i, V in enumerate([CortStiffT, MStiff]):
             Y = np.array([v[2,2] / v[0,0] for v in V])
-            B = SimpleOLS(np.matrix(X), np.matrix(Y).T)
+            B = OLS(np.matrix(X), np.matrix(Y).T)
             xLine = 1-np.linspace(CortRho.min(), CortRho.max(), 10)
             yLine = B[0,0] + B[1,0] * xLine
             Axis.plot(X[:,1], Y, label=Labels[i], linestyle='none', marker='o', color=Colors[i])
