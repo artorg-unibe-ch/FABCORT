@@ -791,7 +791,32 @@ def Main():
     # Axis.set_ylim([0.95, 2.85])
     Axis.set_ylabel('Degree of Anisotropy (-)')
     plt.legend(loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.15))
-    plt.savefig(Path(__file__).parent / 'Plots/AnisotropyBVTV.png')
+    plt.savefig(Path(__file__).parent / 'Plots/AnisotropyBVTV_S.png')
+    plt.show(Figure)
+
+    # Plot anisotropy vs BVTV
+    Figure, Axis = plt.subplots(1,1, dpi=192)
+    Colors = [(0,0,0), (1,0,0), (0,0,1), (1,0,1)]
+    Labels = ['Fabric $m_3 / m_1$', 'Isotropic $E_{33} / E_{11}$', 'Transverse $E_{33} / E_{11}$', 'RUS $E_{33} / E_{11}$']
+    X = np.ones((len(BVTV),2), float)
+    X[:,1] = 1-BVTV
+    for i, V in enumerate([Fabric, mIsotropic, mTransverse, RUS]):
+            if i == 0:
+                Y = np.array([v[2] / v[0] for v in V])
+            else:
+                V = np.linalg.inv(V)
+                Y = np.array([v[0,0] / v[2,2] for v in V])
+            B = SimpleOLS(np.matrix(X), np.matrix(Y).T)
+            xLine = 1-np.linspace(BVTV.min(), BVTV.max(), 10)
+            yLine = B[0,0] + B[1,0] * xLine
+            Axis.plot(X[:,1], Y, label=Labels[i], linestyle='none', marker='o', color=Colors[i])
+            Axis.plot(xLine, yLine, linestyle='--', color=Colors[i], linewidth=1)
+            Axis.text(0.225, yLine[0], f'x = {B[1,0]:.2f}', color=Colors[i])
+    Axis.set_xlabel(r'1-$\rho$ (-)')
+    # Axis.set_ylim([0.95, 2.85])
+    Axis.set_ylabel('Degree of Anisotropy (-)')
+    plt.legend(loc='upper center', ncol=4, bbox_to_anchor=(0.5, 1.15))
+    plt.savefig(Path(__file__).parent / 'Plots/AnisotropyBVTV_E.png')
     plt.show(Figure)
 
     # Fit homogenization with theorical model
@@ -860,9 +885,9 @@ def Main():
 
 
     # Compare isotropic versus transverse isotropic material
-    Y_Iso = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    Y_Tra = np.matrix(np.zeros((len(cFolders)*12, 1)))
-    for f in range(len(cFolders)):
+    Y_Iso = np.matrix(np.zeros((len(BVTV)*12, 1)))
+    Y_Tra = np.matrix(np.zeros((len(BVTV)*12, 1)))
+    for f in range(len(BVTV)):
         Start, Stop = 12*f, 12*(f+1)
         Y_Iso[Start:Stop] = [[mIsotropic[f][0,0]],
                             [mIsotropic[f][0,1]],

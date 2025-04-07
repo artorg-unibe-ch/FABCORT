@@ -33,36 +33,36 @@ def PlotFabric(eValuesCort, eVectorsCort, eValuesTrab, eVectorsTrab):
         # Iterate for each plane
         e1s, e2s, e3s = [], [], []
 
-        for eVal, eVec in zip(eValuesTrab, eVectorsTrab):
+        # for eVal, eVec in zip(eValuesTrab, eVectorsTrab):
 
-            # Build fabric tensor
-            M = Tensor.Fabric(eVal, eVec)
+        #     # Build fabric tensor
+        #     M = Tensor.Fabric(eVal, eVec)
 
-            # Project to normal plane
-            eVals, eVecs = Tensor.ProjectEllipsoid(M, Normal)
+        #     # Project to normal plane
+        #     eVals, eVecs = Tensor.ProjectEllipsoid(M, Normal)
 
-            # Generate points for the ellipse
-            Theta = np.linspace(0, 2 * np.pi, 100)
-            e1 = eVals[0] * np.cos(Theta)
-            e2 = eVals[1] * np.sin(Theta)
+        #     # Generate points for the ellipse
+        #     Theta = np.linspace(0, 2 * np.pi, 100)
+        #     e1 = eVals[0] * np.cos(Theta)
+        #     e2 = eVals[1] * np.sin(Theta)
 
-            # Rotate the points
-            R = np.column_stack([eVecs[0],eVecs[1]])
-            e1e2e3 = R @ np.vstack([e1,e2])
+        #     # Rotate the points
+        #     R = np.column_stack([eVecs[0],eVecs[1]])
+        #     e1e2e3 = R @ np.vstack([e1,e2])
 
-            # Plot lines
-            if i == 0:
-                Axis[i].plot(e1e2e3[1], e1e2e3[2], color=(1,0,0,0.2))
-            elif i == 1:
-                Axis[i].plot(e1e2e3[0], e1e2e3[2], color=(1,0,0,0.2))
-            else:
-                Axis[i].plot(e1e2e3[0], e1e2e3[1], color=(1,0,0,0.2))
+        #     # Plot lines
+        #     if i == 0:
+        #         Axis[i].plot(e1e2e3[1], e1e2e3[2], color=(1,0,0,0.2))
+        #     elif i == 1:
+        #         Axis[i].plot(e1e2e3[0], e1e2e3[2], color=(1,0,0,0.2))
+        #     else:
+        #         Axis[i].plot(e1e2e3[0], e1e2e3[1], color=(1,0,0,0.2))
 
 
-            # Store values
-            e1s.append(e1e2e3[0])
-            e2s.append(e1e2e3[1])
-            e3s.append(e1e2e3[2])
+        #     # Store values
+        #     e1s.append(e1e2e3[0])
+        #     e2s.append(e1e2e3[1])
+        #     e3s.append(e1e2e3[2])
 
 
         for eVal, eVec in zip(eValuesCort, eVectorsCort):
@@ -84,11 +84,11 @@ def PlotFabric(eValuesCort, eVectorsCort, eValuesTrab, eVectorsTrab):
 
             # Plot lines
             if i == 0:
-                Axis[i].plot(e1e2e3[1], e1e2e3[2], color=(0,0,1,0.2))
+                Axis[i].plot(e1e2e3[1], e1e2e3[2], color=(0,0,0,0.2))
             elif i == 1:
-                Axis[i].plot(e1e2e3[0], e1e2e3[2], color=(0,0,1,0.2))
+                Axis[i].plot(e1e2e3[0], e1e2e3[2], color=(0,0,0,0.2))
             else:
-                Axis[i].plot(e1e2e3[0], e1e2e3[1], color=(0,0,1,0.2))
+                Axis[i].plot(e1e2e3[0], e1e2e3[1], color=(0,0,0,0.2))
 
 
             # Store values
@@ -110,6 +110,8 @@ def PlotFabric(eValuesCort, eVectorsCort, eValuesTrab, eVectorsTrab):
             # Axis[i].fill_betweenx(Mean3, Mean2-Std2, Mean2+Std2, color=(0.8,0.8,0.8))
             Axis[i].set_xlabel('e$_2$')
             Axis[i].set_ylabel('e$_3$')
+            Axis[i].set_xlim([-1.1, 1.1])
+            Axis[i].set_ylim([-1.6, 1.6])
 
         elif i == 1:
             # Axis[i].plot(Mean1, Mean3, color=(0,0,0))
@@ -117,6 +119,8 @@ def PlotFabric(eValuesCort, eVectorsCort, eValuesTrab, eVectorsTrab):
             # Axis[i].fill_betweenx(Mean3, Mean1-Std1, Mean1+Std1, color=(0.8,0.8,0.8))
             Axis[i].set_xlabel('e$_1$')
             Axis[i].set_ylabel('e$_3$')
+            Axis[i].set_xlim([-1.1, 1.1])
+            Axis[i].set_ylim([-1.6, 1.6])
 
         else:
             # Axis[i].plot(Mean1, Mean2, color=(0,0,0))
@@ -124,6 +128,8 @@ def PlotFabric(eValuesCort, eVectorsCort, eValuesTrab, eVectorsTrab):
             # Axis[i].fill_betweenx(Mean2, Mean1-Std1, Mean1+Std1, color=(0.8,0.8,0.8))
             Axis[i].set_xlabel('e$_1$')
             Axis[i].set_ylabel('e$_2$')
+            Axis[i].set_xlim([-1.1, 1.1])
+            Axis[i].set_ylim([-1.6, 1.6])
 
         Axis[i].axhline(0, color=(0,0,0), linewidth=0.5, linestyle='--')
         Axis[i].axvline(0, color=(0,0,0), linewidth=0.5, linestyle='--')
@@ -270,7 +276,7 @@ def Main():
     plt.show(Figure)
 
     # Plot fabric
-    PlotFabric(FABCORT, CortVectors, eValues, eVectors)
+    PlotFabric(FABCORT.reshape((-1,3)), CortVectors, eValues, eVectors)
 
     # Fit functions to data
     Stiff = np.vstack([Stiffness[:,0,0], Stiffness[:,1,1], Stiffness[:,2,2]])

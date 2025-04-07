@@ -121,6 +121,8 @@ def Main():
             # Axis[i].fill_betweenx(Mean3, Mean2-Std2, Mean2+Std2, color=(0.8,0.8,0.8))
             Axis[i].set_xlabel('e$_2$')
             Axis[i].set_ylabel('e$_3$')
+            Axis[i].set_xlim([-1.1, 1.1])
+            Axis[i].set_ylim([-1.6, 1.6])
 
         elif i == 1:
             # Axis[i].plot(Mean1, Mean3, color=(0,0,0))
@@ -128,6 +130,8 @@ def Main():
             # Axis[i].fill_betweenx(Mean3, Mean1-Std1, Mean1+Std1, color=(0.8,0.8,0.8))
             Axis[i].set_xlabel('e$_1$')
             Axis[i].set_ylabel('e$_3$')
+            Axis[i].set_xlim([-1.1, 1.1])
+            Axis[i].set_ylim([-1.6, 1.6])
 
         else:
             # Axis[i].plot(Mean1, Mean2, color=(0,0,0))
@@ -135,6 +139,8 @@ def Main():
             # Axis[i].fill_betweenx(Mean2, Mean1-Std1, Mean1+Std1, color=(0.8,0.8,0.8))
             Axis[i].set_xlabel('e$_1$')
             Axis[i].set_ylabel('e$_2$')
+            Axis[i].set_xlim([-1.1, 1.1])
+            Axis[i].set_ylim([-1.6, 1.6])
 
         Axis[i].axhline(0, color=(0,0,0), linewidth=0.5, linestyle='--')
         Axis[i].axvline(0, color=(0,0,0), linewidth=0.5, linestyle='--')
