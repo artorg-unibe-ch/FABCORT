@@ -275,64 +275,195 @@
 			\caption{1x1x1 mm\textsuperscript{3} ROIs}
 		\end{subfigure}
 	\end{figure*}
-	
+
+	\clearpage
+	\subsection{Cortical bone simulations}
+	\begin{figure*}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaiiStiffness_Isotropic}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaiiModulus_Isotropic}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaijStiffness_Isotropic}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaijModulus_Isotropic}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{MuijStiffness_Isotropic}
+			\caption{Stiffness}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{MuijModulus_Isotropic}
+			\caption{Modulus}
+		\end{subfigure}
+		\caption{Isotropic matrix}
+	\end{figure*}
+
+	\begin{figure*}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaiiStiffness_Transverse}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaiiModulus_Transverse}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaijStiffness_Transverse}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaijModulus_Transverse}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{MuijStiffness_Transverse}
+			\caption{Stiffness}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{MuijModulus_Transverse}
+			\caption{Modulus}
+		\end{subfigure}
+		\caption{Transverse isotropic matrix}
+	\end{figure*}
+
+	\begin{figure*}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaiiStiffness_Ratios}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaiiModulus_Ratios}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaijStiffness_Ratios}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{LambdaijModulus_Ratios}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{MuijStiffness_Ratios}
+			\caption{Stiffness}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{MuijModulus_Ratios}
+			\caption{Modulus}
+		\end{subfigure}
+		\caption{Values relative evolution with $\rho$}
+	\end{figure*}
+
+
+
 	\clearpage
 	\subsection{Fit to model}
 	\begin{figure*}
 		\centering
 		\begin{subfigure}[b]{0.45\linewidth}
-			\includegraphics[width=\linewidth]{RegressionFabric_Isotropic}
-			\caption{Old model isotropic matrix}
+			\includegraphics[width=\linewidth]{Anisotropy_SIsotropic}
+			\caption{Isotropic matrix - Stiffness}
 		\end{subfigure}
 		\begin{subfigure}[b]{0.45\linewidth}
-			\includegraphics[width=\linewidth]{RegressionFabric_Transverse}
-			\caption{Old model transverse isotropic matrix}
+			\includegraphics[width=\linewidth]{Anisotropy_EIsotropic}
+			\caption{Isotropic matrix - Compliance}
 		\end{subfigure}
 		\begin{subfigure}[b]{0.45\linewidth}
-			\includegraphics[width=\linewidth]{RegressionFabricK_Isotropic}
-			\caption{New model isotropic matrix}
+			\includegraphics[width=\linewidth]{Anisotropy_STransverse}
+			\caption{Transverse isotropic matrix - Stiffness}
 		\end{subfigure}
 		\begin{subfigure}[b]{0.45\linewidth}
-			\includegraphics[width=\linewidth]{RegressionFabricK_Transverse}
-			\caption{New model transverse isotropic matrix}
+			\includegraphics[width=\linewidth]{Anisotropy_ETransverse}
+			\caption{Transverse isotropic matrix - Compliance}
 		\end{subfigure}
+		\caption{Anisotropy ratios}
 	\end{figure*}
 
-	\begin{table*}
+	\begin{table*}[!hb]
 		% \resizebox{\linewidth}{!}{%
-		\begin{tabular}{l|c|c|c|c|c|c|c}
-			Model & Matrix & $\lambda_0$ & $\mu_0$ & k1 & k2 & k3 & l \\
+		\begin{tabular}{l|c|c|c|c|c|c|c|c}
+			Matrix & M & Model & $\lambda_0$ & $\mu_0$ & k1 & k2 & k3 & l \\
 			\hline
-			Standard & Isotropic & 6406 & 2912 & 2.28 & 2.28 & 2.28 & 0.14 \\
-			Standard & Transverse & 14165 & 4879 & 2.47 & 2.47 & 2.47 & 0.66 \\
-			Proposed & Isotropic & 6414 & 2916 & 2.78 & 2.65 & 1.61 & 0.00 \\
-			Proposed & Transverse & 14468 & 4977 & 2.92 & 3.48 & 1.82 & 0.48 \\
+			\rowcolor[RGB]{240,240,240}
+			Isotropic & Variable & Standard & 6406 & 2912 & 2.28 & 2.28 & 2.28 & 0.14 \\
+			\rowcolor[RGB]{240,240,240}
+			Isotropic & Variable & Proposed & 6414 & 2916 & 2.78 & 2.65 & 1.61 & 0.00 \\
+			&&&&&&&&\\[-0.5em]
+			Isotropic & Average & Standard & 6412 & 2915 & 2.29 & 2.29 & 2.29 & 0.14 \\
+			Isotropic & Average & Proposed & 6414 & 2916 & 2.78 & 2.65 & 1.61 & 0.00 \\
+			&&&&&&&&\\[-0.5em]
+			Isotropic & Matrix & Standard & 6409 & 2914 & 2.29 & 2.29 & 2.29 & 0.15 \\
+			Isotropic & Matrix & Proposed & 6414 & 2916 & 2.78 & 2.65 & 1.61 & 0.00 \\
+			&&&&&&&&\\[-0.5em]
+			\rowcolor[RGB]{240,240,240}
+			Transverse & Variable & Standard & 14165 & 4879 & 2.47 & 2.47 & 2.47 & 0.66 \\
+			\rowcolor[RGB]{240,240,240}
+			Transverse & Variable & Proposed & 14468 & 4977 & 2.92 & 3.48 & 1.82 & 0.48 \\
+			&&&&&&&&\\[-0.5em]
+			Transverse & Average & Standard & 14121 & 4865 & 2.44 & 2.44 & 2.44 & 0.65 \\
+			Transverse & Average & Proposed & 14446 & 4969 & 2.98 & 3.50 & 1.72 & 0.46 \\
+			&&&&&&&&\\[-0.5em]
+			Transverse & Matrix & Standard & 14088 & 4852 & 2.44 & 2.44 & 2.44 & 0.72 \\
+			Transverse & Matrix & Proposed & 14398 & 4953 & 3.27 & 3.14 & 1.74 & 0.51 \\
 			\hline
 		\end{tabular}
 	\end{table*}
 
-	\clearpage
-	\begin{figure*}
+	\begin{figure*}[!h]
 		\centering
 		\begin{subfigure}[b]{0.45\linewidth}
-			\includegraphics[width=\linewidth]{Anisotropy_SIsotropic}
-			\caption{Isotropic matrix}
+			\includegraphics[width=\linewidth]{RegressionFabric_Isotropic}
+			\caption{Standard model variable M}
 		\end{subfigure}
 		\begin{subfigure}[b]{0.45\linewidth}
-			\includegraphics[width=\linewidth]{Anisotropy_STransverse}
-			\caption{Transverse isotropic matrix}
+			\includegraphics[width=\linewidth]{RegressionFabricK_Isotropic}
+			\caption{Proposed model variable M}
 		\end{subfigure}
 		\begin{subfigure}[b]{0.45\linewidth}
-			\includegraphics[width=\linewidth]{Anisotropy_EIsotropic}
-			\caption{Isotropic matrix}
+			\includegraphics[width=\linewidth]{RegressionFabric_Isotropic_Mave}
+			\caption{Standard model average M}
 		\end{subfigure}
 		\begin{subfigure}[b]{0.45\linewidth}
-			\includegraphics[width=\linewidth]{Anisotropy_ETransverse}
-			\caption{Transverse isotropic matrix}
+			\includegraphics[width=\linewidth]{RegressionFabricK_Isotropic_Mave}
+			\caption{Proposed model average M}
 		\end{subfigure}
-		\caption{Anisotropy ratio }
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{RegressionFabric_Isotropic_Mmat}
+			\caption{Standard model matrix M}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{RegressionFabricK_Isotropic_Mmat}
+			\caption{Proposed model matrix M}
+		\end{subfigure}
+		\caption{Isotropic matrix properties}
 	\end{figure*}
 
+	\begin{figure*}[!h]
+		\centering
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{RegressionFabric_Transverse}
+			\caption{Standard model variable M}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{RegressionFabricK_Transverse}
+			\caption{Proposed model variable M}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{RegressionFabric_Transverse_Mave}
+			\caption{Standard model average M}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{RegressionFabricK_Transverse_Mave}
+			\caption{Proposed model average M}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{RegressionFabric_Transverse_Mmat}
+			\caption{Standard model matrix M}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{RegressionFabricK_Transverse_Mmat}
+			\caption{Proposed model matrix M}
+		\end{subfigure}
+		\caption{Transverse isotropic matrix properties}
+	\end{figure*}
+
+	\clearpage
 	\subsection{Comparison to RUS}
 	\begin{figure*}[!h]
 		\begin{subfigure}[b]{0.45\linewidth}

@@ -1240,73 +1240,95 @@ def Main():
 
     # Plot stiffness as function of porosity
     Labels = ['Stiffness', 'Modulus']
+    ij = np.array([[(0,0), (1,1), (2,2)],
+                   [(1,2), (2,0), (0,1)],
+                   [(3,3), (4,4), (5,5)]])
+    FNames = ['Lambdaii', 'Lambdaij', 'Muij']
     for i, (Iso, Tra) in enumerate(zip([CortStiff, CortComp], [CortTraStiff, CortTraComp])):
 
         if i == 0:
 
-            Figure, Axis = plt.subplots(1,1)
-            Axis.plot(1-CortRho, Iso[:,0,0], label=r'$e_{11}$', marker='o',
-                    linestyle='none', fillstyle='none', color=(1,0,0))
-            Axis.plot(1-CortRho, Iso[:,1,1], label=r'$e_{22}$', marker='o',
-                        linestyle='none', fillstyle='none', color=(1,0,1))
-            Axis.plot(1-CortRho, Iso[:,2,2], label=r'$e_{33}$', marker='o',
-                        linestyle='none', fillstyle='none', color=(0,0,1))
-            Axis.set_xlabel(r'1 - $\rho$ (-)')
-            Axis.set_ylabel(Labels[i] + ' (MPa)')
-            Axis.legend(loc='upper right')
-            plt.show(Figure)
+            for j, FName in zip(ij,FNames):
+                e1 = '$e_{' + str(j[0,0]+1) + str(j[0,1]+1) + '}$'
+                e2 = '$e_{' + str(j[1,0]+1) + str(j[1,1]+1) + '}$'
+                e3 = '$e_{' + str(j[2,0]+1) + str(j[2,1]+1) + '}$'
+                Figure, Axis = plt.subplots(1,1)
+                Axis.plot(1-CortRho, Iso[:,j[0,0],j[0,1]], label=e1, marker='o',
+                        linestyle='none', fillstyle='none', color=(1,0,0))
+                Axis.plot(1-CortRho, Iso[:,j[1,0],j[1,1]], label=e2, marker='o',
+                            linestyle='none', fillstyle='none', color=(1,0,1))
+                Axis.plot(1-CortRho, Iso[:,j[2,0],j[2,1]], label=e3, marker='o',
+                            linestyle='none', fillstyle='none', color=(0,0,1))
+                Axis.set_xlabel(r'1 - $\rho$ (-)')
+                Axis.set_ylabel(Labels[i] + ' (MPa)')
+                Axis.legend()
+                plt.savefig(FName + Labels[i] + '_Isotropic.png')
+                plt.show(Figure)
 
-            Figure, Axis = plt.subplots(1,1)
-            Axis.plot(1-CortRho, Tra[:,0,0], label=r'$e_{11}$', marker='o',
-                    linestyle='none', fillstyle='none', color=(1,0,0))
-            Axis.plot(1-CortRho, Tra[:,1,1], label=r'$e_{22}$', marker='o',
-                        linestyle='none', fillstyle='none', color=(1,0,1))
-            Axis.plot(1-CortRho, Tra[:,2,2], label=r'$e_{33}$', marker='o',
-                        linestyle='none', fillstyle='none', color=(0,0,1))
-            Axis.set_xlabel(r'1 - $\rho$ (-)')
-            Axis.set_ylabel(Labels[i] + ' (MPa)')
-            Axis.legend(loc='upper right')
-            plt.show(Figure)
+                Figure, Axis = plt.subplots(1,1)
+                Axis.plot(1-CortRho, Tra[:,j[0,0],j[0,1]], label=e1, marker='o',
+                        linestyle='none', fillstyle='none', color=(1,0,0))
+                Axis.plot(1-CortRho, Tra[:,j[1,0],j[1,1]], label=e2, marker='o',
+                            linestyle='none', fillstyle='none', color=(1,0,1))
+                Axis.plot(1-CortRho, Tra[:,j[2,0],j[2,1]], label=e3, marker='o',
+                            linestyle='none', fillstyle='none', color=(0,0,1))
+                Axis.set_xlabel(r'1 - $\rho$ (-)')
+                Axis.set_ylabel(Labels[i] + ' (MPa)')
+                Axis.legend()
+                plt.savefig(FName + Labels[i] + '_Transverse.png')
+                plt.show(Figure)
         
         else:
 
-            Figure, Axis = plt.subplots(1,1)
-            Axis.plot(1-CortRho, 1/Iso[:,0,0], label=r'$e_{11}$', marker='o',
-                    linestyle='none', fillstyle='none', color=(1,0,0))
-            Axis.plot(1-CortRho, 1/Iso[:,1,1], label=r'$e_{22}$', marker='o',
-                        linestyle='none', fillstyle='none', color=(1,0,1))
-            Axis.plot(1-CortRho, 1/Iso[:,2,2], label=r'$e_{33}$', marker='o',
-                        linestyle='none', fillstyle='none', color=(0,0,1))
-            Axis.set_xlabel(r'1 - $\rho$ (-)')
-            Axis.set_ylabel(Labels[i] + ' (MPa)')
-            Axis.legend(loc='upper right')
-            plt.show(Figure)
+            for j, FName in zip(ij,FNames):
+                e1 = '$e_{' + str(j[0,0]+1) + str(j[0,1]+1) + '}$'
+                e2 = '$e_{' + str(j[1,0]+1) + str(j[1,1]+1) + '}$'
+                e3 = '$e_{' + str(j[2,0]+1) + str(j[2,1]+1) + '}$'
 
-            Figure, Axis = plt.subplots(1,1)
-            Axis.plot(1-CortRho, 1/Tra[:,0,0], label=r'$e_{11}$', marker='o',
-                    linestyle='none', fillstyle='none', color=(1,0,0))
-            Axis.plot(1-CortRho, 1/Tra[:,1,1], label=r'$e_{22}$', marker='o',
-                        linestyle='none', fillstyle='none', color=(1,0,1))
-            Axis.plot(1-CortRho, 1/Tra[:,2,2], label=r'$e_{33}$', marker='o',
-                        linestyle='none', fillstyle='none', color=(0,0,1))
-            Axis.set_xlabel(r'1 - $\rho$ (-)')
-            Axis.set_ylabel(Labels[i] + ' (MPa)')
-            Axis.legend(loc='upper right')
-            plt.show(Figure)
+                Figure, Axis = plt.subplots(1,1)
+                Axis.plot(1-CortRho, np.abs(1/Iso[:,j[0,0],j[0,1]]), label=e1, marker='o',
+                        linestyle='none', fillstyle='none', color=(1,0,0))
+                Axis.plot(1-CortRho, np.abs(1/Iso[:,j[1,0],j[1,1]]), label=e2, marker='o',
+                            linestyle='none', fillstyle='none', color=(1,0,1))
+                Axis.plot(1-CortRho, np.abs(1/Iso[:,j[2,0],j[2,1]]), label=e3, marker='o',
+                            linestyle='none', fillstyle='none', color=(0,0,1))
+                Axis.set_xlabel(r'1 - $\rho$ (-)')
+                Axis.set_ylabel(Labels[i] + ' (MPa)')
+                Axis.legend()
+                plt.savefig(FName + Labels[i] + '_Isotropic.png')
+                plt.show(Figure)
+
+                Figure, Axis = plt.subplots(1,1)
+                Axis.plot(1-CortRho, np.abs(1/Tra[:,j[0,0],j[0,1]]), label=e1, marker='o',
+                        linestyle='none', fillstyle='none', color=(1,0,0))
+                Axis.plot(1-CortRho, np.abs(1/Tra[:,j[1,0],j[1,1]]), label=e2, marker='o',
+                            linestyle='none', fillstyle='none', color=(1,0,1))
+                Axis.plot(1-CortRho, np.abs(1/Tra[:,j[2,0],j[2,1]]), label=e3, marker='o',
+                            linestyle='none', fillstyle='none', color=(0,0,1))
+                Axis.set_xlabel(r'1 - $\rho$ (-)')
+                Axis.set_ylabel(Labels[i] + ' (MPa)')
+                Axis.legend()
+                plt.savefig(FName + Labels[i] + '_Transverse.png')
+                plt.show(Figure)
 
         # Compare stiffness ratio
-        Figure, Axis = plt.subplots(1,1)
-        Axis.plot([0,1],[0,1], linestyle='--', color=(0,0,0), label='1:1', linewidth=1)
-        Axis.plot(Iso[:,0,0] / Iso[:,0,0].max(), Tra[:,0,0] / Tra[:,0,0].max(), label=r'$e_{11}$', marker='o',
-                linestyle='none', fillstyle='none', color=(1,0,0))
-        Axis.plot(Iso[:,1,1] / Iso[:,1,1].max(), Tra[:,1,1] / Tra[:,1,1].max(), label=r'$e_{22}$', marker='o',
-                    linestyle='none', fillstyle='none', color=(1,0,1))
-        Axis.plot(Iso[:,2,2] / Iso[:,2,2].max(), Tra[:,2,2] / Tra[:,2,2].max(), label=r'$e_{33}$', marker='o',
-                    linestyle='none', fillstyle='none', color=(0,0,1))
-        Axis.set_xlabel('Isotropic Matrix ' + Labels[i] + ' Ratio (-)')
-        Axis.set_ylabel('Transverse Isotropic Matrix ' + Labels[i] + ' Ratio (-)')
-        Axis.legend()
-        plt.show(Figure)
+        for j, FName in zip(ij,FNames):
+            e1 = '$e_{' + str(j[0,0]+1) + str(j[0,1]+1) + '}$'
+            e2 = '$e_{' + str(j[1,0]+1) + str(j[1,1]+1) + '}$'
+            e3 = '$e_{' + str(j[2,0]+1) + str(j[2,1]+1) + '}$'
+            Figure, Axis = plt.subplots(1,1)
+            Axis.plot(np.abs(Iso[:,j[0,0],j[0,1]]) / np.abs(Iso[:,j[0,0],j[0,1]]).max(), np.abs(Tra[:,j[0,0],j[0,1]]) / np.abs(Tra[:,j[0,0],j[0,1]]).max(), label=e1, marker='o',
+                    linestyle='none', fillstyle='none', color=(1,0,0))
+            Axis.plot(np.abs(Iso[:,j[1,0],j[1,1]]) / np.abs(Iso[:,j[1,0],j[1,1]]).max(), np.abs(Tra[:,j[1,0],j[1,1]]) / np.abs(Tra[:,j[1,0],j[1,1]]).max(), label=e2, marker='o',
+                        linestyle='none', fillstyle='none', color=(1,0,1))
+            Axis.plot(np.abs(Iso[:,j[2,0],j[2,1]]) / np.abs(Iso[:,j[2,0],j[2,1]]).max(), np.abs(Tra[:,j[2,0],j[2,1]]) / np.abs(Tra[:,j[2,0],j[2,1]]).max(), label=e3, marker='o',
+                        linestyle='none', fillstyle='none', color=(0,0,1))
+            Axis.plot([0,1],[0,1], linestyle='--', color=(0,0,0), label='1:1', linewidth=1)
+            Axis.set_xlabel('Isotropic Matrix ' + Labels[i] + ' Ratio (-)')
+            Axis.set_ylabel('Transverse Isotropic Matrix ' + Labels[i] + ' Ratio (-)')
+            Axis.legend()
+            plt.savefig(FName + Labels[i] + '_Ratios.png')
+            plt.show(Figure)
 
 
     # Fit homogenization with simple isotropic model (2 constants)
@@ -1321,20 +1343,50 @@ def Main():
     ParametersRho, R2adjRho, NERho = FitIsoRho(S, Rho, FName)
 
     # Define fabric-based model scaled with rho^k and m^l 
-    S = CortStiff
+    S = CortTraStiff
     Rho = CortRho
-    eValues = CortVal
+    # eValues = np.mean(CortVal, axis=0)
+    # eValues = np.tile(eValues, len(Rho)).reshape((len(Rho),3))
+    eValues = np.tile([0.875, 0.875, 1.25], len(Rho)).reshape((len(Rho),3))
     eVectors = CortVec
-    FName = str(Path(__file__).parent / 'RegressionFabric_Isotropic.png')
-    ParametersFabric, R2adjFabric, NEFabric = FitFabric(S, Rho, eValues, eVectors)
+    FName = str(Path(__file__).parent / 'RegressionFabric_Transverse_Mmat.png')
+    ParametersFabric, R2adjFabric, NEFabric = FitFabric(S, Rho, eValues, eVectors, FName)
+    # ParametersFabric_Iso = [np.float64(6405.825076745007),
+    #                         np.float64(2912.491750791179),
+    #                         np.float64(2.28247087159728),
+    #                         np.float64(0.14464500331927665)]
+    # ParametersFabric_Tra = [np.float64(14164.85181134848),
+    #                         np.float64(4878.928785874141),
+    #                         np.float64(2.4747660200570483),
+    #                         np.float64(0.6559000570544139)]
+    # ParametersFabric = ParametersFabric_Iso
+
 
     # Define fabric-based model scaled with rho and k according to direction
-    S = CortStiff
+    S = CortTraStiff
     Rho = CortRho
-    eValues = CortVal
+    # eValues = np.mean(CortVal, axis=0)
+    # eValues = np.tile(eValues, len(Rho)).reshape((len(Rho),3))
+    eValues = np.tile([0.875, 0.875, 1.25], len(Rho)).reshape((len(Rho),3))
     eVectors = CortVec
-    FName = str(Path(__file__).parent / 'RegressionFabricK_Isotropic.png')
-    ParametersFabricK, R2adjFabricK, NEFabricK = FitFabricK(S, Rho, eValues, eVectors)
+    FName = str(Path(__file__).parent / 'RegressionFabricK_Transverse_Mmat.png')
+    ParametersFabricK, R2adjFabricK, NEFabricK = FitFabricK(S, Rho, eValues, eVectors, FName)
+    # ParametersFabricK_Iso = [np.float64(6414.372328306333),
+    #                          np.float64(2915.6571209730632),
+    #                          np.float64(2.7849196308145325),
+    #                          np.float64(2.648385833425296),
+    #                          np.float64(1.6092752230527005),
+    #                          np.float64(1.7599999529014755e-13)]
+    # ParametersFabricK_Tra = [np.float64(14468.077599687145),
+    #                          np.float64(4976.7289569071145),
+    #                          np.float64(2.9234906952303743),
+    #                          np.float64(3.475768694433989),
+    #                          np.float64(1.8247772561165674),
+    #                          np.float64(0.4794780810991021)]
+    # ParametersFabricK = ParametersFabricK_Iso
+
+    S = CortTraStiff
+    C = CortTraComp
 
     # Build theoric stiffness and compliance tensors
     Lambda0 = ParametersFabric[0]
@@ -1344,6 +1396,7 @@ def Main():
     N = 100
     Rho = np.linspace(CortRho.min(), CortRho.max(), N)
     Values = np.mean(CortVal, axis=0)
+    Values = 0.875, 0.875, 1.25
     Vectors = np.eye(3)
     FabStiffness = np.zeros((N, 6, 6))
     FabCompliance = np.zeros((N, 6, 6))
@@ -1354,8 +1407,6 @@ def Main():
         FabStiffness[i] = T
         FabCompliance[i] = np.linalg.inv(T)
 
-    S = CortStiff
-    C = CortComp
 
     Figure, Axis = plt.subplots(1,1)
     Axis.plot(1-CortRho, S[:,0,0], label=r'$e_{11}$', color=(1,0,0), 
@@ -1364,7 +1415,7 @@ def Main():
     Axis.plot(1-CortRho, S[:,1,1], label=r'$e_{22}$', color=(1,0,1), 
               linestyle='none', marker='o', fillstyle='none')
     Axis.plot(1-Rho, FabStiffness[:,1,1], label=r'Fit $e_{22}$', color=(1,0,1))
-    Axis.plot(1-CortRho, S[:,2,2], label=r'$e_{33}}$', color=(0,0,1), 
+    Axis.plot(1-CortRho, S[:,2,2], label=r'$e_{33}$', color=(0,0,1), 
               linestyle='none', marker='o', fillstyle='none')
     Axis.plot(1-Rho, FabStiffness[:,2,2], label=r'Fit $e_{33}$', color=(0,0,1))
     Axis.set_xlabel(r'1 - $\rho$ (-)')
@@ -1387,7 +1438,6 @@ def Main():
     Axis.legend(loc='upper right')
     plt.show(Figure)
     
-
     Lambda0 = ParametersFabricK[0]
     Mu0 = ParametersFabricK[1]
     k1, k2, k3 = ParametersFabricK[2:5]
@@ -1405,19 +1455,16 @@ def Main():
         FabKStiffness[i] = T
         FabKCompliance[i] = np.linalg.inv(T)
 
-    S = CortStiff
-    C = CortComp
-
     Figure, Axis = plt.subplots(1,1)
-    Axis.plot(1-CortRho, S[:,0,0], label=r'$e_{11}$', color=(1,0,0), 
+    Axis.plot(1-CortRho, S[:,3,3], label=r'$e_{11}$', color=(1,0,0), 
               linestyle='none', marker='o', fillstyle='none')
-    Axis.plot(1-Rho, FabKStiffness[:,0,0], label=r'Fit $e_{11}$', color=(1,0,0))
-    Axis.plot(1-CortRho, S[:,1,1], label=r'$e_{22}$', color=(1,0,1), 
+    Axis.plot(1-Rho, FabKStiffness[:,3,3], label=r'Fit $e_{11}$', color=(1,0,0))
+    Axis.plot(1-CortRho, S[:,4,4], label=r'$e_{22}$', color=(1,0,1), 
               linestyle='none', marker='o', fillstyle='none')
-    Axis.plot(1-Rho, FabKStiffness[:,1,1], label=r'Fit $e_{22}$', color=(1,0,1))
-    Axis.plot(1-CortRho, S[:,2,2], label=r'$e_{33}$', color=(0,0,1), 
+    Axis.plot(1-Rho, FabKStiffness[:,4,4], label=r'Fit $e_{22}$', color=(1,0,1))
+    Axis.plot(1-CortRho, S[:,5,5], label=r'$e_{33}$', color=(0,0,1), 
               linestyle='none', marker='o', fillstyle='none')
-    Axis.plot(1-Rho, FabKStiffness[:,2,2], label=r'Fit $e_{33}$', color=(0,0,1))
+    Axis.plot(1-Rho, FabKStiffness[:,5,5], label=r'Fit $e_{33}$', color=(0,0,1))
     Axis.set_xlabel(r'1 - $\rho$ (-)')
     Axis.set_ylabel('Stiffness (MPa)')
     Axis.legend(loc='upper right')
