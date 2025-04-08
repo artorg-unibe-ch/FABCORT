@@ -1220,6 +1220,94 @@ def Main():
         CortTraComp[i] = np.linalg.inv(St)
 
 
+    # Plot fabric as function of porosity
+    MA, RA = [], []
+    Delta = 0.05
+    for i in range(int(np.ceil((1-CortRho.min())/Delta))):
+        Min = (1-CortRho) > (i)*Delta - 0.05
+        Max = (1-CortRho) < (i+1)*Delta + 0.05
+        RA.append((i+0.5)*Delta)
+        MA.append(np.mean(CortVal[Min & Max], axis=0))
+
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(1-CortRho, CortVal[:,2] / CortVal[:,0], marker='o',
+            linestyle='none', fillstyle='none', color=(1,0,0))
+    Axis.plot(RA, np.array(MA)[:,2] / np.array(MA)[:,0], color=(0,0,1))
+    Axis.set_xlabel(r'1 - $\rho$ (-)')
+    Axis.set_ylabel('DA')
+    Axis.set_ylim([1.0,6])
+    plt.show(Figure)
+
+    # Plot stiffness as function of porosity
+    Labels = ['Stiffness', 'Modulus']
+    for i, (Iso, Tra) in enumerate(zip([CortStiff, CortComp], [CortTraStiff, CortTraComp])):
+
+        if i == 0:
+
+            Figure, Axis = plt.subplots(1,1)
+            Axis.plot(1-CortRho, Iso[:,0,0], label=r'$e_{11}$', marker='o',
+                    linestyle='none', fillstyle='none', color=(1,0,0))
+            Axis.plot(1-CortRho, Iso[:,1,1], label=r'$e_{22}$', marker='o',
+                        linestyle='none', fillstyle='none', color=(1,0,1))
+            Axis.plot(1-CortRho, Iso[:,2,2], label=r'$e_{33}$', marker='o',
+                        linestyle='none', fillstyle='none', color=(0,0,1))
+            Axis.set_xlabel(r'1 - $\rho$ (-)')
+            Axis.set_ylabel(Labels[i] + ' (MPa)')
+            Axis.legend(loc='upper right')
+            plt.show(Figure)
+
+            Figure, Axis = plt.subplots(1,1)
+            Axis.plot(1-CortRho, Tra[:,0,0], label=r'$e_{11}$', marker='o',
+                    linestyle='none', fillstyle='none', color=(1,0,0))
+            Axis.plot(1-CortRho, Tra[:,1,1], label=r'$e_{22}$', marker='o',
+                        linestyle='none', fillstyle='none', color=(1,0,1))
+            Axis.plot(1-CortRho, Tra[:,2,2], label=r'$e_{33}$', marker='o',
+                        linestyle='none', fillstyle='none', color=(0,0,1))
+            Axis.set_xlabel(r'1 - $\rho$ (-)')
+            Axis.set_ylabel(Labels[i] + ' (MPa)')
+            Axis.legend(loc='upper right')
+            plt.show(Figure)
+        
+        else:
+
+            Figure, Axis = plt.subplots(1,1)
+            Axis.plot(1-CortRho, 1/Iso[:,0,0], label=r'$e_{11}$', marker='o',
+                    linestyle='none', fillstyle='none', color=(1,0,0))
+            Axis.plot(1-CortRho, 1/Iso[:,1,1], label=r'$e_{22}$', marker='o',
+                        linestyle='none', fillstyle='none', color=(1,0,1))
+            Axis.plot(1-CortRho, 1/Iso[:,2,2], label=r'$e_{33}$', marker='o',
+                        linestyle='none', fillstyle='none', color=(0,0,1))
+            Axis.set_xlabel(r'1 - $\rho$ (-)')
+            Axis.set_ylabel(Labels[i] + ' (MPa)')
+            Axis.legend(loc='upper right')
+            plt.show(Figure)
+
+            Figure, Axis = plt.subplots(1,1)
+            Axis.plot(1-CortRho, 1/Tra[:,0,0], label=r'$e_{11}$', marker='o',
+                    linestyle='none', fillstyle='none', color=(1,0,0))
+            Axis.plot(1-CortRho, 1/Tra[:,1,1], label=r'$e_{22}$', marker='o',
+                        linestyle='none', fillstyle='none', color=(1,0,1))
+            Axis.plot(1-CortRho, 1/Tra[:,2,2], label=r'$e_{33}$', marker='o',
+                        linestyle='none', fillstyle='none', color=(0,0,1))
+            Axis.set_xlabel(r'1 - $\rho$ (-)')
+            Axis.set_ylabel(Labels[i] + ' (MPa)')
+            Axis.legend(loc='upper right')
+            plt.show(Figure)
+
+        # Compare stiffness ratio
+        Figure, Axis = plt.subplots(1,1)
+        Axis.plot([0,1],[0,1], linestyle='--', color=(0,0,0), label='1:1', linewidth=1)
+        Axis.plot(Iso[:,0,0] / Iso[:,0,0].max(), Tra[:,0,0] / Tra[:,0,0].max(), label=r'$e_{11}$', marker='o',
+                linestyle='none', fillstyle='none', color=(1,0,0))
+        Axis.plot(Iso[:,1,1] / Iso[:,1,1].max(), Tra[:,1,1] / Tra[:,1,1].max(), label=r'$e_{22}$', marker='o',
+                    linestyle='none', fillstyle='none', color=(1,0,1))
+        Axis.plot(Iso[:,2,2] / Iso[:,2,2].max(), Tra[:,2,2] / Tra[:,2,2].max(), label=r'$e_{33}$', marker='o',
+                    linestyle='none', fillstyle='none', color=(0,0,1))
+        Axis.set_xlabel('Isotropic Matrix ' + Labels[i] + ' Ratio (-)')
+        Axis.set_ylabel('Transverse Isotropic Matrix ' + Labels[i] + ' Ratio (-)')
+        Axis.legend()
+        plt.show(Figure)
+
 
     # Fit homogenization with simple isotropic model (2 constants)
     S = CortStiff
@@ -1247,6 +1335,110 @@ def Main():
     eVectors = CortVec
     FName = str(Path(__file__).parent / 'RegressionFabricK_Isotropic.png')
     ParametersFabricK, R2adjFabricK, NEFabricK = FitFabricK(S, Rho, eValues, eVectors)
+
+    # Build theoric stiffness and compliance tensors
+    Lambda0 = ParametersFabric[0]
+    Mu0 = ParametersFabric[1]
+    k = ParametersFabric[2]
+    l = ParametersFabric[3]
+    N = 100
+    Rho = np.linspace(CortRho.min(), CortRho.max(), N)
+    Values = np.mean(CortVal, axis=0)
+    Vectors = np.eye(3)
+    FabStiffness = np.zeros((N, 6, 6))
+    FabCompliance = np.zeros((N, 6, 6))
+    for i, rho in enumerate(Rho):
+        T = FabricTensor(Lambda0, Mu0, k, l, rho, Values, Vectors)
+        T = Tensor.IsoMorphism3333_66(T)
+        T = Tensor.OrthoProj(T)
+        FabStiffness[i] = T
+        FabCompliance[i] = np.linalg.inv(T)
+
+    S = CortStiff
+    C = CortComp
+
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(1-CortRho, S[:,0,0], label=r'$e_{11}$', color=(1,0,0), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, FabStiffness[:,0,0], label=r'Fit $e_{11}$', color=(1,0,0))
+    Axis.plot(1-CortRho, S[:,1,1], label=r'$e_{22}$', color=(1,0,1), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, FabStiffness[:,1,1], label=r'Fit $e_{22}$', color=(1,0,1))
+    Axis.plot(1-CortRho, S[:,2,2], label=r'$e_{33}}$', color=(0,0,1), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, FabStiffness[:,2,2], label=r'Fit $e_{33}$', color=(0,0,1))
+    Axis.set_xlabel(r'1 - $\rho$ (-)')
+    Axis.set_ylabel('Stiffness (MPa)')
+    Axis.legend(loc='upper right')
+    plt.show(Figure)
+
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(1-CortRho, 1/C[:,0,0], label=r'$e_{11}$', color=(1,0,0), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, 1/FabCompliance[:,0,0], label=r'Fit $e_{11}$', color=(1,0,0))
+    Axis.plot(1-CortRho, 1/C[:,1,1], label=r'$e_{22}$', color=(1,0,1), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, 1/FabCompliance[:,1,1], label=r'Fit $e_{22}$', color=(1,0,1))
+    Axis.plot(1-CortRho, 1/C[:,2,2], label=r'$e_{33}$', color=(0,0,1), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, 1/FabCompliance[:,2,2], label=r'Fit $e_{33}$', color=(0,0,1))
+    Axis.set_xlabel(r'1 - $\rho$ (-)')
+    Axis.set_ylabel('Modulus (MPa)')
+    Axis.legend(loc='upper right')
+    plt.show(Figure)
+    
+
+    Lambda0 = ParametersFabricK[0]
+    Mu0 = ParametersFabricK[1]
+    k1, k2, k3 = ParametersFabricK[2:5]
+    l = ParametersFabricK[5]
+    N = 100
+    Rho = np.linspace(CortRho.min(), CortRho.max(), N)
+    Values = np.mean(CortVal, axis=0)
+    Vectors = np.eye(3)
+    FabKStiffness = np.zeros((N, 6, 6))
+    FabKCompliance = np.zeros((N, 6, 6))
+    for i, rho in enumerate(Rho):
+        T = FabricKTensor(Lambda0, Mu0, k1, k2, k3, l, rho, Values, Vectors)
+        T = Tensor.IsoMorphism3333_66(T)
+        T = Tensor.OrthoProj(T)
+        FabKStiffness[i] = T
+        FabKCompliance[i] = np.linalg.inv(T)
+
+    S = CortStiff
+    C = CortComp
+
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(1-CortRho, S[:,0,0], label=r'$e_{11}$', color=(1,0,0), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, FabKStiffness[:,0,0], label=r'Fit $e_{11}$', color=(1,0,0))
+    Axis.plot(1-CortRho, S[:,1,1], label=r'$e_{22}$', color=(1,0,1), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, FabKStiffness[:,1,1], label=r'Fit $e_{22}$', color=(1,0,1))
+    Axis.plot(1-CortRho, S[:,2,2], label=r'$e_{33}$', color=(0,0,1), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, FabKStiffness[:,2,2], label=r'Fit $e_{33}$', color=(0,0,1))
+    Axis.set_xlabel(r'1 - $\rho$ (-)')
+    Axis.set_ylabel('Stiffness (MPa)')
+    Axis.legend(loc='upper right')
+    plt.show(Figure)
+
+    Figure, Axis = plt.subplots(1,1)
+    Axis.plot(1-CortRho, 1/C[:,0,0], label=r'$e_{11}$', color=(1,0,0), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, 1/FabKCompliance[:,0,0], label=r'Fit $e_{11}$', color=(1,0,0))
+    Axis.plot(1-CortRho, 1/C[:,1,1], label=r'$e_{22}$', color=(1,0,1), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, 1/FabKCompliance[:,1,1], label=r'Fit $e_{22}$', color=(1,0,1))
+    Axis.plot(1-CortRho, 1/C[:,2,2], label=r'$e_{33}$', color=(0,0,1), 
+              linestyle='none', marker='o', fillstyle='none')
+    Axis.plot(1-Rho, 1/FabKCompliance[:,2,2], label=r'Fit $e_{33}$', color=(0,0,1))
+    Axis.set_xlabel(r'1 - $\rho$ (-)')
+    Axis.set_ylabel('Modulus (MPa)')
+    Axis.legend(loc='upper right')
+    plt.show(Figure)
+
+
 
     # Build stiffness and compliance tensors
     Lambda0 = ParametersFabric[0]
