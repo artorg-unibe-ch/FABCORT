@@ -293,6 +293,7 @@
 
 	\subsection{Cortical Bone Fabric}
 	
+	\clearpage
 	\subsection{Fit to model}
 	\begin{figure*}
 		\centering
@@ -307,10 +308,10 @@
 		\caption{Fit to model}
 	\end{figure*}
 
-	\begin{table*}[!hb]
+	\begin{table*}[!h]
 		% \resizebox{\linewidth}{!}{%
 		\begin{tabular}{l|c|c|c|c|c|c|c|c|c|c}
-			Model & M & $\lambda_0$ & $\lambda_0$' & $\mu_0$ & k1 & k2 & k3 & l & $R^2_{adj}$ & NE \\
+			Model & M & $\lambda_0$ & $\lambda_0$' & $\mu_0$ & $k_1$ & $k_2$ & $k_3$ & $l$ & $R^2_{adj}$ & NE \\
 			\hline
 			Standard & Variable & 12514 & 12351 & 6944 & 2.30 & 2.30 & 2.30 & 0.57 & 0.984 & 0.05 \\
 			Proposed & Variable & 12480 & 12318 & 6925 & 2.36 & 2.69 & 1.88 & 0.48 & 0.986 & 0.04\\
@@ -322,7 +323,81 @@
 	\end{table*}
 
 	\clearpage
+	\subsection{Other Proposition}
+	Proposed Model
+	\begin{equation}
+		\begin{split}
+		\mathbb{S} &= \sum_{i=1}^{3} \lambda_{ii} \mathbf{M_i} \otimes \mathbf{M_i}\\
+					&+ \sum_{\substack{i,j=1\\i\neq j}}^{3} \lambda_{ij} \mathbf{M_i} \otimes \mathbf{M_j}\\
+					&+ \sum_{\substack{i,j=1\\i\neq j}}^{3} \mu_{ij} \mathbf{M_i} \underline{\overline{\otimes}}  \mathbf{M_j}
+		\end{split}
+	\end{equation}
+	with
+	\begin{equation}
+		\mathbf{M_i} = \sum_{i=1}^{3} m_i^l \mathbf{m}_i \otimes \mathbf{m}_i
+	\end{equation}
+	\begin{equation}
+		\lambda_{ii} = (\lambda_0 + 2\mu_0) \rho^{k_{\lambda_i}}
+	\end{equation}
+	\begin{equation}
+		\lambda_{ij} = \lambda_0' \rho^{k_{\lambda_{ij}}}
+	\end{equation}
+	\begin{equation}
+		\mu_{ij} = \mu_0 \rho^{k_{\mu_{ij}}}
+	\end{equation}
+
+	\begin{table*}[!h]
+		\resizebox{\linewidth}{!}{%
+		\begin{tabular}{l|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c}
+			Model & M & $\lambda_0$ & $\lambda_0$' & $\mu_0$ & $k_{\lambda_1}$ & $k_{\lambda_2}$ & $k_{\lambda_3}$ & $k_{\lambda_{12}}$ & $k_{\lambda_{13}}$ & $k_{\lambda_{23}}$ & $k_{\mu_{12}}$ & $k_{\mu_{13}}$ & $k_{\mu_{23}}$ & $l$ & $R^2_{adj}$ & NE \\
+			\hline
+			Alternative & Variable & 12989 & 13079 & 6335 & 2.06 & 2.44 & 1.78 & 2.86 & 2.61 & 2.86 & 1.67 & 1.45 & 1.66 & 0.52 & 0.992 & 0.04 \\
+			Alternative & Average & 13033 & 13123 & 6356 & 2.17 & 2.51 & 1.70 & 2.91 & 2.62 & 2.91 & 1.76 & 1.47 & 1.63 & 0.51 & 0.992 & 0.04 \\
+			\hline
+		\end{tabular}}
+	\end{table*}
+
+	\begin{figure*}
+		\centering
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{../_Results/FullKModel}
+			\caption{Standard model}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{../_Results/FullKModel_AverageFabric}
+			\caption{Proposed model}
+		\end{subfigure}
+		\caption{Fit to model}
+	\end{figure*}
+
+
+	\clearpage
 	\subsection{Comparison to RUS}
+
+	\begin{figure}[!h]
+		\centering
+			\includegraphics[height=\linewidth]{../_Results/ExpSim_Rho}
+			\caption{Average ROI porosity vs porosity from Cai et al.}
+	\end{figure}
+
+	\begin{figure}[!h]
+		\centering
+			\includegraphics[height=\linewidth]{../_Results/ExpSim_S}
+			\caption{Simulation vs experimental stiffness tensor components}
+	\end{figure}
+
+	\begin{figure*}
+		\centering
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{../_Results/ExpSim_AniS}
+			\caption{Stiffness ratio}
+		\end{subfigure}
+		\begin{subfigure}[b]{0.45\linewidth}
+			\includegraphics[width=\linewidth]{../_Results/ExpSim_AniE}
+			\caption{Young's moduli ratio}
+		\end{subfigure}
+		\caption{Degree of anisotropy}
+	\end{figure*}
 
 	%
 	%

@@ -247,6 +247,7 @@ def Main():
     Strain = np.array([0.001, 0.001, 0.001, 0.002, 0.002, 0.002])
     Isotropic = np.zeros((len(Folders), len(ROIs), 6, 6))
     Transverse = np.zeros((len(Folders), len(ROIs), 6, 6))
+    Compliance = np.zeros((len(Folders), len(ROIs), 6, 6))
     Fabric = np.zeros((len(Folders), len(ROIs), 3))
     Rho = np.zeros((len(Folders), len(ROIs)))
     for f, Folder in enumerate(Folders):
@@ -277,9 +278,20 @@ def Main():
                 # Symetrize matrix
                 S[f,r] = 1/2 * (S[f,r] + S[f,r].T)
 
+                # Project onto orthotropy
+                for i in range(6):
+                    for j in range(6):
+                        if i>2 or j>2:
+                            if i != j:
+                                S[f,r,i,j] = 0
+
+                # Compute corresponding compliance
+                Compliance[f,r] = np.linalg.inv(S[f,r])
+
     # Reshape arrays
     Isotropic = np.reshape(Isotropic, (-1, 6, 6))
     Transverse = np.reshape(Transverse, (-1, 6, 6))
+    Compliance = np.reshape(Compliance, (-1, 6, 6))
     Fabric = np.reshape(Fabric, (-1, 3))
     Rho = np.reshape(Rho, (-1))
 
@@ -328,7 +340,7 @@ def Main():
     print(Parameters)
 
     # Fit homogenization with theorical model and average fabric
-    X = np.matrix(np.zeros((len(Rho)*12, 13)))
+    X = np.matrix(np.zeros((len(Rho)*12, 7)))
     Y = np.matrix(np.zeros((len(Rho)*12, 1)))
     m1, m2, m3 = np.mean(Fabric, axis=0)
     for f in range(len(Rho)):
@@ -372,6 +384,7 @@ def Main():
     for f in range(len(Rho)):
         
         Start, Stop = 12*f, 12*(f+1)
+        # m1, m2, m3 = Fabric[f]
 
         # Build system
         X[Start:Stop] = np.array([[1, 0, 0, np.log(Rho[f]), 0, 0, 0, 0, 0, 0, 0, 0, np.log(m1 * m1)],
@@ -400,9 +413,12 @@ def Main():
                                 [Transverse[f][4,4]],
                                 [Transverse[f][5,5]]])
     
-    Parameters, R2adj, NE = Homogenization_OLS2(X, Y)
+    FName = Path(__file__).parents[1] / '_Results/FullKModel_AverageFabric.png'
+    Parameters, R2adj, NE = Homogenization_OLS2(X, Y, FName=str(FName))
     print(Parameters)
     
+    # Fit compliance with 2 constants model
+
     return
 
 
