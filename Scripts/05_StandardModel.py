@@ -122,11 +122,11 @@ def Homogenization_OLS(X, Y, Alpha=0.95, FName=''):
 def Main():
 
     # Read CV data
-    CVData = pd.read_csv(Path(__file__).parents[1] / '_Results' / 'Cortical' / 'CV.csv', index_col=[0,1])
+    CVData = pd.read_csv(Path(__file__).parents[1] / 'Results' / 'CV.csv', index_col=[0,1])
 
     # Define paths
-    ResultsPath =Path(__file__).parents[1] / '_Results' / 'Cortical' / 'Homogenisation'
-    FabricPath = Path(__file__).parents[1] / '_Results' / 'Cortical' / 'Fabric'
+    ResultsPath =Path(__file__).parents[1] / 'Results' / 'Homogenisation'
+    FabricPath = Path(__file__).parents[1] / 'Results' / 'Fabric'
     Folders = [Folder.name for Folder in FabricPath.iterdir() if Folder.is_dir()]
 
     # List simulations output files
@@ -227,7 +227,7 @@ def Main():
                                 [Transverse[f][4,4]],
                                 [Transverse[f][5,5]]])
     
-    FName = Path(__file__).parents[1] / '_Results/StandardOrthoModel.png'
+    FName = Path(__file__).parents[1] / 'Results/StandardOrthoModel.png'
     OrthoParameters, OrthoR2adj, OrthoNE = Homogenization_OLS(X, Y, FName=str(FName))
     print(OrthoParameters)
     
@@ -268,7 +268,7 @@ def Main():
                                 [pTransverse[f][4,4]],
                                 [pTransverse[f][5,5]]])
     
-    FName = Path(__file__).parents[1] / '_Results/StandardTransModel.png'
+    FName = Path(__file__).parents[1] / 'Results/StandardTransModel.png'
     TransParameters, TransR2adj, TransNE = Homogenization_OLS(X, Y, FName=str(FName))
     print(TransParameters)
 
@@ -293,7 +293,7 @@ def Main():
     Parameters.index.name = 'Model'
     Parameters = Parameters.reset_index()
 
-    Table = Path(__file__).parents[1] / '_Article' / 'TabZysset.tex'
+    Table = Path(__file__).parents[1] / 'Article' / 'TabZysset.tex'
     Caption = 'Parameters and fit quality coefficient obtained with the standard Zysset-Curnier model in orthotropic and transverse isotropic space.'
     Label = 'TabZysset'
     cFormat  = 'l|c|c|c|c|c|c|c'

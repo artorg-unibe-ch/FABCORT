@@ -139,11 +139,11 @@ def PlotFit(S, St, FName=''):
 def Main():
 
     # Read CV data
-    CVData = pd.read_csv(Path(__file__).parents[1] / '_Results' / 'Cortical' / 'CV.csv', index_col=[0,1])
+    CVData = pd.read_csv(Path(__file__).parents[1] / 'Results' / 'CV.csv', index_col=[0,1])
 
     # Define paths
-    ResultsPath =Path(__file__).parents[1] / '_Results' / 'Cortical' / 'Homogenisation'
-    FabricPath = Path(__file__).parents[1] / '_Results' / 'Cortical' / 'Fabric'
+    ResultsPath =Path(__file__).parents[1] / 'Results' / 'Homogenisation'
+    FabricPath = Path(__file__).parents[1] / 'Results' / 'Fabric'
     Folders = [Folder.name for Folder in FabricPath.iterdir() if Folder.is_dir()]
 
     # List simulations output files
@@ -292,6 +292,7 @@ def Main():
             Axis[i,j].annotate(f'$\Lambda_{2*i+j+1}$ = {round(P[0])}' + r'$\rho$' + '$^{%.2f}$'%(round(P[1],2)), xy=(0.1, 0.9), xycoords='axes fraction')
             Axis[i,j].annotate(r'$R^2$: ' + format(round(R2, 3),'.3f'), xy=(0.1, 0.8), xycoords='axes fraction')
     plt.tight_layout()
+    plt.savefig(Path(__file__).parents[1] / 'Results/LambdaVSRho.png')
     plt.show(Figure)
 
     # Corresponding bases in 6-dimensional space
@@ -368,7 +369,7 @@ def Main():
 
         Yang += np.expand_dims(M,-1) * NN
 
-    FName = Path(__file__).parents[1] / '_Results/YangCowinModel.png'
+    FName = Path(__file__).parents[1] / 'Results/SpectralModel.png'
     R2, NE = PlotFit(Projected, Yang, FName=str(FName))
 
     return
