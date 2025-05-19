@@ -9,9 +9,8 @@
 *abqSeReader.py
 *dpUtils.py
 
-# Ignore reference publications
-*Cai2019.pdf
-*Fan2021.pdf
+# Ignore literature files
+Literature*
 
 # Ignore medtool backup file
 *.bak
@@ -19,11 +18,5 @@
 # Ignore python compiled files
 *.pyc
 
-# Ignore blender files
-*.blend
-
 # Ignore inkscape files
 *.svg
-
-# Ignore manuscript
-*Fabric_Mechanical_Property_Relationships_of_Homogenised_Human_Trabecular_and_Cortical_Bone__Models__Material_Constants_and_Applications.pdf
