@@ -520,6 +520,109 @@ class Tensor():
 
         return A
 
+    def TransProj(self, A):
+        
+        """
+        Vectorized projection of m 6x6 stiffness matrices to transverse isotropy.
+        
+        Parameters:
+            C : ndarray, shape (m, 6, 6) — symmetric stiffness matrices
+        
+        Returns:
+            ti_params : ndarray, shape (m, 5) — [C11, C12, C13, C33, C44]
+            errors : ndarray, shape (m,) — Frobenius norm error ||C - C_TI||
+        """
+            
+        # Least-squares design matrix
+        X = np.array([[1.0,  0.0,  0.0,  0.0, 0.0],
+                      [0.0,  1.0,  0.0,  0.0, 0.0],
+                      [0.0,  0.0,  1.0,  0.0, 0.0],
+                      [0.0,  1.0,  0.0,  0.0, 0.0],
+                      [1.0,  0.0,  0.0,  0.0, 0.0],
+                      [0.0,  0.0,  1.0,  0.0, 0.0],
+                      [0.0,  0.0,  1.0,  0.0, 0.0],
+                      [0.0,  0.0,  1.0,  0.0, 0.0],
+                      [0.0,  0.0,  0.0,  1.0, 0.0],
+                      [0.0,  0.0,  0.0,  0.0, 1.0],
+                      [0.0,  0.0,  0.0,  0.0, 1.0],
+                      [1.0, -1.0,  0.0,  0.0, 0.0]])
+
+        if len(A.shape) == 2:
+
+            # Targets for least-squares
+            Y = np.vstack([A[0, 0],
+                           A[0, 1],
+                           A[0, 2],
+                           A[1, 0],
+                           A[1, 1],
+                           A[1, 2],
+                           A[2, 0],
+                           A[2, 1],
+                           A[2, 2],
+                           A[3, 3],
+                           A[4, 4],
+                           A[5, 5]])
+
+            # Solve least-squares in batch: X = (A^T A)^{-1} A^T y
+            XTXi = np.linalg.inv(X.T @ X)
+            B = XTXi @ X.T @ Y  # shape (m, 2)
+
+            # Extract TI constants
+            C11, C12, C13, C33, C44 = B.ravel()
+
+            # Build transverse isotropic tensor
+            C = np.array([[C11, C12, C13,   0,    0,       0],
+                          [C12, C11, C13,   0,    0,       0],
+                          [C13, C13, C33,   0,    0,       0],
+                          [  0,   0,   0, C44,    0,       0],
+                          [  0,   0,   0,   0,  C44,       0],
+                          [  0,   0,   0,   0,    0, C11-C12]])
+            
+
+        else:
+            # Targets for least-squares
+            Y = np.stack([A[:, 0, 0],
+                          A[:, 0, 1],
+                          A[:, 0, 2],
+                          A[:, 1, 0],
+                          A[:, 1, 1],
+                          A[:, 1, 2],
+                          A[:, 2, 0],
+                          A[:, 2, 1],
+                          A[:, 2, 2],
+                          A[:, 3, 3],
+                          A[:, 4, 4],
+                          A[:, 5, 5]], axis=-1)
+
+            # Solve least-squares in batch: X = (A^T A)^{-1} A^T y
+            XTXi = np.linalg.inv(X.T @ X)
+            B = (XTXi @ X.T @ Y.transpose(1, 0)).T  # shape (m, 2)
+
+            # Extract TI constants
+            C11, C12, C13, C33, C44 = B[:,0], B[:,1], B[:,2], B[:,3], B[:,4]
+
+            # Build transverse isotropic tensors
+            C = np.zeros((len(C11), 6, 6))
+            C[:,0,0] = C11
+            C[:,1,1] = C11
+            C[:,0,1] = C12
+            C[:,1,0] = C12
+            C[:,0,2] = C13
+            C[:,1,2] = C13
+            C[:,2,0] = C13
+            C[:,2,1] = C13
+            C[:,2,2] = C33
+            C[:,3,3] = C44
+            C[:,4,4] = C44
+            C[:,5,5] = C11 - C12
+
+        # Compute Frobenius norm error
+        NE = np.sum((A - C)**2, axis=(1,2)) / np.sum(A**2, axis=(1,2))
+        NE = np.sqrt(NE)
+        
+        return C, NE
+
+
 #%% Tensors building
     def Fabric(self, eValues, eVectors):
 
