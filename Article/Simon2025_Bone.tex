@@ -208,11 +208,11 @@
 	\begin{figure}[!h]
 		\centering
 		\begin{subfigure}[t]{.45\linewidth}
-			\includegraphics[height=0.8\linewidth]{../_Results/Cortical/Scans/2009_213_L}
+			\includegraphics[height=0.8\linewidth]{../Results/Scans/2009_213_L}
 			\caption{Typical sample with its porosities}
 		\end{subfigure}
 		\begin{subfigure}[t]{0.45\linewidth}
-			\includegraphics[height=0.8\linewidth, trim=50 50 50 0]{../_Results/Cortical/ROIs/ROIs}
+			\includegraphics[height=0.8\linewidth, trim=50 50 50 0]{../Results/ROIs/ROIs}
 			\caption{ROIs analysed}
 		\end{subfigure}
 	\end{figure}
@@ -238,12 +238,12 @@
 	\begin{equation}
 		\mathbf{S} =
 		\begin{pmatrix}
-			S_{11} & S_{12}^T & S_{13}^T & 0 & 0 & 0 \\
-			S_{21} & S_{22}^T & S_{23}^T & 0 & 0 & 0 \\
-			S_{31} & S_{32}^T & S_{33}^T & 0 & 0 & 0 \\
-			0 & 0 & 0 & S_{44}^T & 0 & 0 \\
-			0 & 0 & 0 & 0 & S_{55}^T & 0 \\
-			0 & 0 & 0 & 0 & 0 & S_{66}^T \\
+			S_{11} & S_{12} & S_{13} & 0 & 0 & 0 \\
+			S_{21} & S_{22} & S_{23} & 0 & 0 & 0 \\
+			S_{31} & S_{32} & S_{33} & 0 & 0 & 0 \\
+			0 & 0 & 0 & S_{44} & 0 & 0 \\
+			0 & 0 & 0 & 0 & S_{55} & 0 \\
+			0 & 0 & 0 & 0 & 0 & S_{66} \\
 		\end{pmatrix}
 	\end{equation}
 
@@ -323,12 +323,12 @@
 	\subsection{Cortical Bone Morphology}
 	\begin{figure}
 		\centering
-			\includegraphics[width=\linewidth]{../_Results/Cortical/CV_Rho}
+			\includegraphics[width=\linewidth]{../Results/CV_Rho}
 			\caption{Coefficient of variation as function of porosity}
 	\end{figure}
 	\begin{figure*}
 		\centering
-		\includegraphics[width=\linewidth]{../_Results/Cortical/Fabric/Fabric}
+		\includegraphics[width=\linewidth]{../Results/Fabric/Fabric}
 		\caption{ROIs fabric projected on principal planes}
 	\end{figure*}
 	
@@ -336,15 +336,19 @@
 	\subsection{Fit to model}
 	\begin{figure*}
 		\centering
-		\begin{subfigure}[t]{.45\linewidth}
-			\includegraphics[height=0.8\linewidth]{../_Results/StandardOrthoModel}
-			\caption{Orthotropic space}
+		\begin{subfigure}[t]{.3\linewidth}
+			\includegraphics[height=0.8\linewidth]{../Results/StandardOrthoModel}
+			\caption{Zysset-Curnier model in orthotropic space}
 		\end{subfigure}
-		\begin{subfigure}[t]{.45\linewidth}
-			\includegraphics[height=0.8\linewidth]{../_Results/StandardTransModel}
-			\caption{Transverse isotropic space}
+		\begin{subfigure}[t]{.3\linewidth}
+			\includegraphics[height=0.8\linewidth]{../Results/StandardTransModel}
+			\caption{Zysset-Curnier model in transverse isotropic space}
 		\end{subfigure}
-		\caption{Fit to Zysset-Curnier model}
+		\begin{subfigure}[t]{.3\linewidth}
+			\includegraphics[height=0.8\linewidth]{../Results/SpectralModel}
+			\caption{Yang and Cowin model in transverse isotropic space}
+		\end{subfigure}
+		\caption{Models fitting results}
 	\end{figure*}
 	\begin{table}[!h]
 		\centering
@@ -355,54 +359,16 @@
 			Model & $\lambda_0$ & $\lambda_0'$ & $\mu_0$ &  $k$ &  $l$ & $R^2_{adj}$ &   NE \\
 		\midrule
 		Orthotropic &       19831 &        12618 &    3527 & 2.48 & 0.57 &        0.99 & 0.05 \\
-		Transverse &       12901 &        13234 &    6432 & 2.49 & 0.65 &        0.94 & 0.07 \\
+		Transverse &       17505 &        13117 &    4016 & 2.49 & 0.39 &        0.94 & 0.11 \\
 		\bottomrule
 		\end{tabular}
 	\end{table}
 
 	\begin{figure*}
 		\centering
-			\includegraphics[width=\linewidth]{../_Results/CowinModel}
-			\caption{Fit to Yang and Cowin model}
+			\includegraphics[width=\linewidth]{../Results/LambdaVSRho}
+			\caption{Eigenvalues of the stiffness tensor as function of porosity}
 	\end{figure*}
-
-	% \begin{table*}[!h]
-	% 	\resizebox{\linewidth}{!}{%
-	% 	\begin{tabular}{l|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c}
-	% 		Model & $\lambda_0$ & $\lambda_0$' & $\mu_0$ & $k_{\lambda_{11}}$ & $k_{\lambda_{22}}$ & $k_{\lambda_{33}}$ & $k_{\lambda_{12}}$ & $k_{\lambda_{31}}$ & $k_{\lambda_{23}}$ & $k_{\mu_{12}}$ & $k_{\mu_{31}}$ & $k_{\mu_{23}}$ & $l$ & $R^2_{adj}$ & NE \\
-	% 		\hline
-	% 		Alternative k & 19395 & 13126 & 3179 & 2.36 & 2.24 & 1.77 & 2.84 & 2.76 & 2.84 & 1.54 & 1.60 & 1.72 & 0.53 & 0.995 & 0.03 \\
-	% 		Proposed l & 21329 & 13014 & 3200 & 3.12 & 3.12 & 2.12 & 3.12 & 2.62 & 2.62 & 1.92 & 1.61 & 1.61 & 0.44 & 0.988 & 0.05 \\
-	% 		\hline
-	% 	\end{tabular}}
-	% \end{table*}
-
-	% \clearpage
-	% \subsection{Connection to trabecular bone}
-
-	% \begin{figure*}
-	% 	\centering
-	% 	\begin{subfigure}[b]{0.45\linewidth}
-	% 		\includegraphics[width=\linewidth]{../_Results/StandardModel_Trabecular}
-	% 		\caption{Standard model}
-	% 	\end{subfigure}
-	% 	\begin{subfigure}[b]{0.45\linewidth}
-	% 		\includegraphics[width=\linewidth]{../_Results/ProposedModel_Trabecular}
-	% 		\caption{Proposed model}
-	% 	\end{subfigure}
-	% 	\caption{Fit to trabecular data}
-	% \end{figure*}
-
-	% \begin{table*}[!h]
-	% 	% \resizebox{\linewidth}{!}{%
-	% 	\begin{tabular}{l|c|c|c|c|c|c|c|c|c|c}
-	% 		Model & $\lambda_0$ & $\lambda_0$' & $\mu_0$ & $k_\lambda$ & $k_\mu$ & $l$ & $R^2_{adj}$ & NE \\
-	% 		\hline
-	% 		Standard & 8866 & 3223 & 2024 & 2.03 & 2.03 & 0.82 & 0.962 & 0.17 \\
-	% 		Proposed & 7610 & 2768 & 1739 & 1.845 & 1.846 & -0.46 & 0.945 & 0.18 \\
-	% 		\hline
-	% 	\end{tabular}
-	% \end{table*}
 
 
 	\clearpage
@@ -410,24 +376,35 @@
 
 	\begin{figure}[!h]
 		\centering
-			\includegraphics[height=\linewidth]{../_Results/Cortical/ExpSim_Rho}
+			\includegraphics[height=\linewidth]{../Results/ExpSim_Rho}
 			\caption{Average ROI porosity vs porosity from Cai et al.}
 	\end{figure}
 
-	\begin{figure}[!h]
+	\begin{figure*}[!h]
 		\centering
-			\includegraphics[height=\linewidth]{../_Results/Cortical/ExpSim_S}
-			\caption{Simulation vs experimental stiffness tensor components}
-	\end{figure}
+		\begin{subfigure}[t]{.3\linewidth}
+		\includegraphics[height=0.8\linewidth]{../Results/ExpSim_S_Raw}
+		\caption{Orthotropic space}
+		\end{subfigure}
+		\begin{subfigure}[t]{.3\linewidth}
+		\includegraphics[height=0.8\linewidth]{../Results/ExpSim_S_Proj}
+		\caption{Transverse isotropic space}
+		\end{subfigure}
+		\begin{subfigure}[t]{.3\linewidth}
+		\includegraphics[height=0.8\linewidth]{../Results/ExpSim_S_Filt}
+		\caption{Transverse isotropic space, high CV filtered}
+		\end{subfigure}		
+		\caption{Simulation vs experimental stiffness tensor components}
+	\end{figure*}
 
 	\begin{figure*}
 		\centering
 		\begin{subfigure}[b]{0.45\linewidth}
-			\includegraphics[width=\linewidth]{../_Results/Cortical/ExpSim_AniS}
+			\includegraphics[width=\linewidth]{../Results/ExpSim_AniS}
 			\caption{Stiffness ratio}
 		\end{subfigure}
 		\begin{subfigure}[b]{0.45\linewidth}
-			\includegraphics[width=\linewidth]{../_Results/Cortical/ExpSim_AniE}
+			\includegraphics[width=\linewidth]{../Results/ExpSim_AniE}
 			\caption{Young's moduli ratio}
 		\end{subfigure}
 		\caption{Degree of anisotropy}
