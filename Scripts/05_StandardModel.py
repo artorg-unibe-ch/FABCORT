@@ -117,6 +117,97 @@ def Homogenization_OLS(X, Y, Alpha=0.95, FName=''):
 
     return Parameters, R2adj, NE
 
+def SplitHomogenization_OLS(X1, Y1, X2, Y2, Alpha=0.95, FName=''):
+
+    # Solve linear systems
+    XTXi = np.linalg.inv(X1.T * X1)
+    B1 = XTXi * X1.T * Y1
+
+    XTXi = np.linalg.inv(X2.T * X2)
+    B2 = XTXi * X2.T * Y2
+
+    # Compute predictions
+    Y_Obs1 = np.exp(Y1)
+    Y_Obs2 = np.exp(Y2)
+    Y_Obs = np.vstack((Y_Obs1, Y_Obs2))
+    Y_Fit1 = np.exp(X1 * B1)
+    Y_Fit2 = np.exp(X2 * B2)
+    Y_Fit = np.vstack((Y_Fit1, Y_Fit2))
+
+    # Compute residuals, variance, and covariance matrix
+    Residuals = Y_Obs - Y_Fit
+    DOFs = len(Y_Obs) - 7
+
+    # Store parameters in data frame
+    Parameters = pd.DataFrame(columns=['Lambda0','Lambda0p','Mu0','kb','lb','ks','ls'])
+    Parameters.loc['Value'] = [np.exp(B1[0,0]) - np.exp(B2[0,0]), np.exp(B1[1,0]), np.exp(B2[0,0])/2, B1[2,0], B1[3,0], B2[1,0], B2[2,0]]
+
+    # Round values
+    Columns = Parameters.columns
+    for C in Columns[:3]:
+        Parameters[C] = Parameters[C].apply(lambda x: round(x))
+    for C in Columns[3:]:
+        Parameters[C] = Parameters[C].apply(lambda x: round(x,2))
+
+    # Compute R2 and standard error of the estimate
+    RSS = np.sum([R**2 for R in Residuals])
+    SE = np.sqrt(RSS / DOFs)
+    TSS = np.sum([R**2 for R in (Y_Obs - Y_Obs.mean())])
+    RegSS = TSS - RSS
+    R2 = RegSS / TSS
+
+    # Compute R2adj and NE
+    R2adj = 1 - RSS/TSS * (len(Y_Obs)-1)/(len(Y_Obs)-7-1)
+
+    NE = []
+    for i in range(0,len(Y_Obs),12):
+        T_Obs = Y_Obs[i:i+12]
+        T_Fit = Y_Fit[i:i+12]
+        Numerator = np.sum([T**2 for T in (T_Obs-T_Fit)])
+        Denominator = np.sum([T**2 for T in T_Obs])
+        NE.append(np.sqrt(Numerator/Denominator))
+    NE = np.array(NE)
+
+
+    # Prepare data for plot
+    Line = np.linspace(min(Y_Obs.min(), Y_Fit.min()),
+                       max(Y_Obs.max(), Y_Fit.max()), len(Y_Obs))
+
+    # Plots
+    DPI = 500
+    # SMax = max([Y_Obs.max(), Y_Fit.max()]) * 1.2
+    # SMin = min([Y_Obs.min(), Y_Fit.min()]) / 1.2
+    Colors=[(0,0,1),(0,1,0),(1,0,0)]
+
+    Figure, Axes = plt.subplots(1, 1, figsize=(5.5, 4.5), dpi=DPI)
+    Axes.plot(Y_Obs1[X1[:, 0] == 1], Y_Fit1[X1[:, 0] == 1],
+              color=Colors[0], linestyle='none', marker='s')
+    Axes.plot(Y_Obs1[X1[:, 1] == 1], Y_Fit1[X1[:, 1] == 1],
+              color=Colors[1], linestyle='none', marker='o')
+    Axes.plot(Y_Obs2[X2[:, 0] == 1], Y_Fit2[X2[:, 0] == 1],
+              color=Colors[2], linestyle='none', marker='^')
+    Axes.plot([], color=Colors[0], linestyle='none', marker='s', label=r'$\lambda_{ii}$')
+    Axes.plot([], color=Colors[1], linestyle='none', marker='o', label=r'$\lambda_{ij}$')
+    Axes.plot([], color=Colors[2], linestyle='none', marker='^', label=r'$\mu_{ij}$')
+    Axes.plot(Line, Line, color=(0, 0, 0), linestyle='--')
+    Axes.annotate(r'N ROIs   : ' + str(len(Y_Obs)//12), xy=(0.3, 0.1), xycoords='axes fraction')
+    Axes.annotate(r'N Points : ' + str(len(Y_Obs)), xy=(0.3, 0.025), xycoords='axes fraction')
+    Axes.annotate(r'$R^2_{ajd}$: ' + format(round(R2adj, 3),'.3f'), xy=(0.65, 0.1), xycoords='axes fraction')
+    Axes.annotate(r'NE : ' + format(round(NE.mean(), 2), '.2f') + '$\pm$' + format(round(NE.std(), 2), '.2f'), xy=(0.65, 0.025), xycoords='axes fraction')
+    Axes.set_xlabel('Observed $\mathrm{\mathbb{S}}$ (MPa)')
+    Axes.set_ylabel('Fitted $\mathrm{\mathbb{S}}$ (MPa)')
+    # Axes.set_xlim([SMin, SMax])
+    # Axes.set_ylim([SMin, SMax])
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.legend(loc='upper left')
+    plt.subplots_adjust(left=0.15, bottom=0.15)
+    if len(FName) > 0:
+        plt.savefig(FName)
+    plt.show()
+
+    return Parameters, R2adj, NE
+
 #%% Main
 
 def Main():
@@ -266,11 +357,59 @@ def Main():
                                 [pTransverse[f][2,2]],
                                 [pTransverse[f][3,3]],
                                 [pTransverse[f][4,4]],
-                                [pTransverse[f][5,5]]])
+                                [pTransverse[f][5,5]/2]])
     
     FName = Path(__file__).parents[1] / 'Results/StandardTransModel.png'
     TransParameters, TransR2adj, TransNE = Homogenization_OLS(X, Y, FName=str(FName))
     print(TransParameters)
+
+    # Splitted fitting for shear and bulk components
+    X1 = np.matrix(np.zeros((len(Rho)*9, 4)))
+    Y1 = np.matrix(np.zeros((len(Rho)*9, 1)))
+    X2 = np.matrix(np.zeros((len(Rho)*3, 3)))
+    Y2 = np.matrix(np.zeros((len(Rho)*3, 1)))
+    m1, m2, m3 = np.mean(Fabric, axis=0)
+    m1 = (m1 + m2) / 2
+    m2 = m1
+    for f in range(len(Rho)):
+        
+        Start, Stop = 9*f, 9*(f+1)
+
+        # Build system
+        X1[Start:Stop] = np.array([[1, 0, np.log(Rho[f]), np.log(m1 ** 2)],
+                                   [0, 1, np.log(Rho[f]), np.log(m1 * m2)],
+                                   [0, 1, np.log(Rho[f]), np.log(m1 * m3)],
+                                   [0, 1, np.log(Rho[f]), np.log(m2 * m1)],
+                                   [1, 0, np.log(Rho[f]), np.log(m2 ** 2)],
+                                   [0, 1, np.log(Rho[f]), np.log(m2 * m3)],
+                                   [0, 1, np.log(Rho[f]), np.log(m3 * m1)],
+                                   [0, 1, np.log(Rho[f]), np.log(m3 * m2)],
+                                   [1, 0, np.log(Rho[f]), np.log(m3 ** 2)]])
+        
+        Y1[Start:Stop] = np.log([[pTransverse[f][0,0]],
+                                 [pTransverse[f][0,1]],
+                                 [pTransverse[f][0,2]],
+                                 [pTransverse[f][1,0]],
+                                 [pTransverse[f][1,1]],
+                                 [pTransverse[f][1,2]],
+                                 [pTransverse[f][2,0]],
+                                 [pTransverse[f][2,1]],
+                                 [pTransverse[f][2,2]]])
+        
+        Start, Stop = 3*f, 3*(f+1)
+        
+        X2[Start:Stop] = np.array([[1, np.log(Rho[f]), np.log(m2 * m3)],
+                                   [1, np.log(Rho[f]), np.log(m3 * m1)],
+                                   [1, np.log(Rho[f]), np.log(m1 * m2)]])
+        
+        Y2[Start:Stop] = np.log([[pTransverse[f][3,3]],
+                                 [pTransverse[f][4,4]],
+                                 [pTransverse[f][5,5]/2]])
+    
+    
+    FName = Path(__file__).parents[1] / 'Results/SplittedTransModel.png'
+    SplitParameters, SplitR2adj, SplitNE = SplitHomogenization_OLS(X1, Y1, X2, Y2, FName=str(FName))
+    print(SplitParameters)
 
     # Write Latex table
     Parameters = pd.DataFrame()
