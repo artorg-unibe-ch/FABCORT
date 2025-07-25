@@ -1,5 +1,4 @@
-
-# Cortical and Trabecular Bone Microstructure Analysis
+# FABCORT: Fabric and Elasticity in Cortical and Trabecular Bone
 
 This repository contains Python scripts to process, analyze, and visualize the mechanical and structural properties of bone microarchitecture, focusing on cortical and trabecular regions. It includes tools for ROI extraction, homogenization, fabric tensor analysis, and micromechanical model fitting (Zysset–Curnier).
 
@@ -18,7 +17,7 @@ This repository contains Python scripts to process, analyze, and visualize the m
 ├── Utils/                  # Utility modules (Time, Tensor, Read, Image)
 └── README.md               # This file
 ```
-
+>Note: Folders starting with 99 are temporary during repo restructuration
 ---
 
 ## 🧠 Main Functionalities
@@ -110,7 +109,7 @@ conda env create -f Requirements.yml
 - 🔬 Implement two modified Zysset–Curnier models for transverse isotropy (see `FabCortMathematica.pdf`):
   - Model with 3 constants and 4 exponents
   - Model with 3 constants and 7 exponents
-
+- 🔬 Implement comparison between RUS measurement and numerical simulation of cortical bone with isotropic and transverse isotropic matrix
 ---
 
 ## 📚 References
