@@ -1,0 +1,95 @@
+\begin{thebibliography}{7}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\href}[2]{#2}
+\providecommand{\path}[1]{#1}
+\providecommand{\DOIprefix}{doi:}
+\providecommand{\ArXivprefix}{arXiv:}
+\providecommand{\URLprefix}{URL: }
+\providecommand{\Pubmedprefix}{pmid:}
+\providecommand{\doi}[1]{\href{http://dx.doi.org/#1}{\path{#1}}}
+\providecommand{\Pubmed}[1]{\href{pmid:#1}{\path{#1}}}
+\providecommand{\bibinfo}[2]{#2}
+\ifx\xfnm\relax \def\xfnm[#1]{\unskip,\space#1}\fi
+%Type = Article
+\bibitem[{Bernard et~al.(2013)Bernard, Grimal and
+  Laugier}]{Bernard2013AccurateMO}
+\bibinfo{author}{Bernard, S.}, \bibinfo{author}{Grimal, Q.},
+  \bibinfo{author}{Laugier, P.}, \bibinfo{year}{2013}.
+\newblock \bibinfo{title}{Accurate measurement of cortical bone elasticity
+  tensor with resonant ultrasound spectroscopy.}
+\newblock \bibinfo{journal}{Journal of the mechanical behavior of biomedical
+  materials} \bibinfo{volume}{18}, \bibinfo{pages}{12--9}.
+\newblock \URLprefix \url{https://api.semanticscholar.org/CorpusID:206218634}.
+%Type = Article
+\bibitem[{Cai et~al.(2019)Cai, Follet, Peralta, Gardegaront, Farlay, Gauthier,
+  Yu, Gineyts, Olivier, Langer, Gourrier, Mitton, Peyrin, Grimal and
+  Laugier}]{Cai2019AnisotropicEP}
+\bibinfo{author}{Cai, X.}, \bibinfo{author}{Follet, H.},
+  \bibinfo{author}{Peralta, L.}, \bibinfo{author}{Gardegaront, M.},
+  \bibinfo{author}{Farlay, D.}, \bibinfo{author}{Gauthier, R.},
+  \bibinfo{author}{Yu, B.}, \bibinfo{author}{Gineyts, E.},
+  \bibinfo{author}{Olivier, C.}, \bibinfo{author}{Langer, M.},
+  \bibinfo{author}{Gourrier, A.}, \bibinfo{author}{Mitton, D.},
+  \bibinfo{author}{Peyrin, F.}, \bibinfo{author}{Grimal, Q.},
+  \bibinfo{author}{Laugier, P.}, \bibinfo{year}{2019}.
+\newblock \bibinfo{title}{Anisotropic elastic properties of human femoral
+  cortical bone and relationships with composition and microstructure in
+  elderly.}
+\newblock \bibinfo{journal}{Acta biomaterialia} \bibinfo{volume}{90},
+  \bibinfo{pages}{254--266}.
+\newblock \URLprefix \url{https://api.semanticscholar.org/CorpusID:85564078}.
+%Type = Article
+\bibitem[{Dall’Ara et~al.(2012)Dall’Ara, Schmidt and
+  Zysset}]{DallAra2012MicroindentationCD}
+\bibinfo{author}{Dall’Ara, E.}, \bibinfo{author}{Schmidt, R.},
+  \bibinfo{author}{Zysset, P.K.}, \bibinfo{year}{2012}.
+\newblock \bibinfo{title}{Microindentation can discriminate between damaged and
+  intact human bone tissue.}
+\newblock \bibinfo{journal}{Bone} \bibinfo{volume}{50 4},
+  \bibinfo{pages}{925--9}.
+\newblock \URLprefix \url{https://api.semanticscholar.org/CorpusID:23349859}.
+%Type = Article
+\bibitem[{Franzoso and Zysset(2009)}]{Franzoso2009ElasticAO}
+\bibinfo{author}{Franzoso, G.}, \bibinfo{author}{Zysset, P.K.},
+  \bibinfo{year}{2009}.
+\newblock \bibinfo{title}{Elastic anisotropy of human cortical bone secondary
+  osteons measured by nanoindentation.}
+\newblock \bibinfo{journal}{Journal of biomechanical engineering}
+  \bibinfo{volume}{131 2}, \bibinfo{pages}{021001}.
+\newblock \URLprefix \url{https://api.semanticscholar.org/CorpusID:25765365}.
+%Type = Article
+\bibitem[{Fratzl and Weinkamer(2007)}]{Fratzl2007NaturesHM}
+\bibinfo{author}{Fratzl, P.}, \bibinfo{author}{Weinkamer, R.},
+  \bibinfo{year}{2007}.
+\newblock \bibinfo{title}{Nature’s hierarchical materials}.
+\newblock \bibinfo{journal}{Progress in Materials Science}
+  \bibinfo{volume}{52}, \bibinfo{pages}{1263--1334}.
+\newblock \URLprefix \url{https://api.semanticscholar.org/CorpusID:137424898}.
+%Type = Article
+\bibitem[{Simon et~al.(2022)Simon, Indermaur, Schenk, Hosseinitabatabaei,
+  Willie and Zysset}]{Simon2022}
+\bibinfo{author}{Simon, M.}, \bibinfo{author}{Indermaur, M.},
+  \bibinfo{author}{Schenk, D.}, \bibinfo{author}{Hosseinitabatabaei, S.},
+  \bibinfo{author}{Willie, B.M.}, \bibinfo{author}{Zysset, P.},
+  \bibinfo{year}{2022}.
+\newblock \bibinfo{title}{Fabric-elasticity relationships of tibial trabecular
+  bone are similar in osteogenesis imperfecta and healthy individuals}.
+\newblock \bibinfo{journal}{Bone} \bibinfo{volume}{155},
+  \bibinfo{pages}{116282}.
+\newblock \URLprefix
+  \url{https://www.sciencedirect.com/science/article/pii/S8756328221004488},
+  \DOIprefix\doi{https://doi.org/10.1016/j.bone.2021.116282}.
+%Type = Article
+\bibitem[{Simon et~al.(2021)Simon, Indermaur, Schenk, Hosseinitabatabaei,
+  Willie and Zysset}]{Simon2021FabricelasticityRO}
+\bibinfo{author}{Simon, M.}, \bibinfo{author}{Indermaur, M.},
+  \bibinfo{author}{Schenk, D.}, \bibinfo{author}{Hosseinitabatabaei, S.},
+  \bibinfo{author}{Willie, B.M.}, \bibinfo{author}{Zysset, P.K.},
+  \bibinfo{year}{2021}.
+\newblock \bibinfo{title}{Fabric-elasticity relationships of tibial trabecular
+  bone are similar in osteogenesis imperfecta and healthy individuals.}
+\newblock \bibinfo{journal}{Bone} , \bibinfo{pages}{116282}\URLprefix
+  \url{https://api.semanticscholar.org/CorpusID:245057699}.
+
+\end{thebibliography}
